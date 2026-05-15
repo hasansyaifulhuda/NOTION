@@ -1,0 +1,659 @@
+================================================================================
+DEVVAULT - SQL EDITOR SETUP GUIDE
+Complete Supabase Database Setup Instructions
+================================================================================
+
+STEP-BY-STEP SETUP
+================================================================================
+
+STEP 1: Create Supabase Project
+--------------------------------
+1. Go to https://supabase.com
+2. Click "Start your project" and sign in
+3. Click "New project"
+4. Choose your organization
+5. Enter project name: devvault
+6. Enter a strong database password (save this!)
+7. Select your region
+8. Click "Create new project" and wait for it to initialize
+
+STEP 2: Open SQL Editor
+--------------------------------
+1. In your Supabase dashboard, click "SQL Editor" in the left sidebar
+2. Click "New query"
+3. Copy and paste each SQL block below one at a time
+4. Click "Run" after each block
+
+STEP 3: Create Admin User in Supabase Auth
+--------------------------------
+1. In your Supabase dashboard, click "Authentication" in the left sidebar
+2. Click "Users"
+3. Click "Add user" > "Create new user"
+4. Enter:
+   Email: hasansyaifulhuda24@gmail.com
+   Password: Shannn24.
+5. Click "Create user"
+6. IMPORTANT: Do NOT create auth.users manually via SQL
+
+STEP 4: Configure supabase.js
+--------------------------------
+1. Go to Project Settings > API
+2. Copy the Project URL
+3. Copy the anon/public key (NOT the service_role key)
+4. Paste them into supabase.js
+
+================================================================================
+SQL SCHEMA - RUN IN ORDER
+================================================================================
+
+NOTE: This SQL is safe to rerun. Triggers and policies are dropped before being recreated where needed.
+
+-- ============================================================
+-- BLOCK 1: EXTENSIONS AND HELPERS
+-- ============================================================
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- ============================================================
+-- BLOCK 2: UPDATED_AT TRIGGER FUNCTION
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ============================================================
+-- BLOCK 3: PROFILES TABLE
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'guest',
+  display_name TEXT,
+  avatar_url TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+DROP TRIGGER IF EXISTS update_profiles_updated_at ON profiles;
+
+CREATE TRIGGER update_profiles_updated_at
+  BEFORE UPDATE ON profiles
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================================
+-- BLOCK 4: CATEGORIES TABLE
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS categories (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  icon TEXT DEFAULT 'folder',
+  description TEXT,
+  sort_order INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+DROP TRIGGER IF EXISTS update_categories_updated_at ON categories;
+
+CREATE TRIGGER update_categories_updated_at
+  BEFORE UPDATE ON categories
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+CREATE INDEX IF NOT EXISTS idx_categories_slug ON categories(slug);
+CREATE INDEX IF NOT EXISTS idx_categories_sort_order ON categories(sort_order);
+
+-- ============================================================
+-- BLOCK 5: PAGES TABLE
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS pages (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
+  title TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  description TEXT,
+  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published')),
+  visibility TEXT NOT NULL DEFAULT 'private' CHECK (visibility IN ('public', 'private')),
+  is_pinned BOOLEAN NOT NULL DEFAULT FALSE,
+  sort_order INTEGER DEFAULT 0,
+  created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  deleted_at TIMESTAMPTZ DEFAULT NULL
+);
+
+DROP TRIGGER IF EXISTS update_pages_updated_at ON pages;
+
+CREATE TRIGGER update_pages_updated_at
+  BEFORE UPDATE ON pages
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+CREATE INDEX IF NOT EXISTS idx_pages_slug ON pages(slug);
+CREATE INDEX IF NOT EXISTS idx_pages_category_id ON pages(category_id);
+CREATE INDEX IF NOT EXISTS idx_pages_status_visibility ON pages(status, visibility);
+CREATE INDEX IF NOT EXISTS idx_pages_deleted_at ON pages(deleted_at);
+CREATE INDEX IF NOT EXISTS idx_pages_is_pinned ON pages(is_pinned);
+CREATE INDEX IF NOT EXISTS idx_pages_sort_order ON pages(sort_order);
+
+-- ============================================================
+-- BLOCK 6: PAGE BLOCKS TABLE
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS page_blocks (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  page_id UUID NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
+  type TEXT NOT NULL CHECK (type IN ('heading', 'text', 'code', 'quote', 'link', 'checklist', 'snippet_embed')),
+  content TEXT,
+  language TEXT DEFAULT 'javascript',
+  metadata JSONB DEFAULT '{}',
+  sort_order INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+DROP TRIGGER IF EXISTS update_page_blocks_updated_at ON page_blocks;
+
+CREATE TRIGGER update_page_blocks_updated_at
+  BEFORE UPDATE ON page_blocks
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+CREATE INDEX IF NOT EXISTS idx_page_blocks_page_id ON page_blocks(page_id);
+CREATE INDEX IF NOT EXISTS idx_page_blocks_sort_order ON page_blocks(sort_order);
+CREATE INDEX IF NOT EXISTS idx_page_blocks_type ON page_blocks(type);
+
+-- ============================================================
+-- BLOCK 7: SNIPPETS TABLE
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS snippets (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
+  title TEXT NOT NULL,
+  description TEXT,
+  code TEXT NOT NULL,
+  language TEXT DEFAULT 'javascript',
+  visibility TEXT NOT NULL DEFAULT 'private' CHECK (visibility IN ('public', 'private')),
+  copy_permission TEXT NOT NULL DEFAULT 'admin' CHECK (copy_permission IN ('public', 'admin')),
+  created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  deleted_at TIMESTAMPTZ DEFAULT NULL
+);
+
+DROP TRIGGER IF EXISTS update_snippets_updated_at ON snippets;
+
+CREATE TRIGGER update_snippets_updated_at
+  BEFORE UPDATE ON snippets
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+CREATE INDEX IF NOT EXISTS idx_snippets_category_id ON snippets(category_id);
+CREATE INDEX IF NOT EXISTS idx_snippets_visibility ON snippets(visibility);
+CREATE INDEX IF NOT EXISTS idx_snippets_deleted_at ON snippets(deleted_at);
+
+-- ============================================================
+-- BLOCK 8: NOTIFICATIONS TABLE
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  type TEXT NOT NULL CHECK (type IN ('success', 'warning', 'error', 'info')),
+  title TEXT NOT NULL,
+  message TEXT,
+  is_read BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read);
+
+-- ============================================================
+-- BLOCK 9: ACTIVITY LOGS TABLE
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS activity_logs (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  action TEXT NOT NULL,
+  entity_type TEXT,
+  entity_id UUID,
+  description TEXT,
+  metadata JSONB DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_activity_logs_user_id ON activity_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_activity_logs_entity_type ON activity_logs(entity_type);
+CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at ON activity_logs(created_at);
+
+-- ============================================================
+-- BLOCK 10: ENABLE ROW LEVEL SECURITY
+-- ============================================================
+
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE page_blocks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE snippets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE activity_logs ENABLE ROW LEVEL SECURITY;
+
+-- ============================================================
+-- BLOCK 11: HELPER FUNCTION TO CHECK ADMIN ROLE
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION is_admin()
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM profiles
+    WHERE id = auth.uid()
+    AND role = 'admin'
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ============================================================
+-- BLOCK 12: PROFILES RLS POLICIES
+-- ============================================================
+
+-- Users can view their own profile
+DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
+CREATE POLICY "Users can view own profile"
+  ON profiles FOR SELECT
+  USING (auth.uid() = id);
+
+-- Users can update their own profile
+DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
+CREATE POLICY "Users can update own profile"
+  ON profiles FOR UPDATE
+  USING (auth.uid() = id);
+
+-- Admin can view all profiles
+DROP POLICY IF EXISTS "Admin can view all profiles" ON profiles;
+CREATE POLICY "Admin can view all profiles"
+  ON profiles FOR SELECT
+  USING (is_admin());
+
+-- Allow profile creation on signup
+DROP POLICY IF EXISTS "Allow profile creation" ON profiles;
+CREATE POLICY "Allow profile creation"
+  ON profiles FOR INSERT
+  WITH CHECK (auth.uid() = id);
+
+-- ============================================================
+-- BLOCK 13: CATEGORIES RLS POLICIES
+-- ============================================================
+
+-- Everyone can view categories
+DROP POLICY IF EXISTS "Anyone can view categories" ON categories;
+CREATE POLICY "Anyone can view categories"
+  ON categories FOR SELECT
+  USING (TRUE);
+
+-- Only admin can insert categories
+DROP POLICY IF EXISTS "Admin can insert categories" ON categories;
+CREATE POLICY "Admin can insert categories"
+  ON categories FOR INSERT
+  WITH CHECK (is_admin());
+
+-- Only admin can update categories
+DROP POLICY IF EXISTS "Admin can update categories" ON categories;
+CREATE POLICY "Admin can update categories"
+  ON categories FOR UPDATE
+  USING (is_admin());
+
+-- Only admin can delete categories
+DROP POLICY IF EXISTS "Admin can delete categories" ON categories;
+CREATE POLICY "Admin can delete categories"
+  ON categories FOR DELETE
+  USING (is_admin());
+
+-- ============================================================
+-- BLOCK 14: PAGES RLS POLICIES
+-- ============================================================
+
+-- Guests can view published public pages that are not deleted
+DROP POLICY IF EXISTS "Anyone can view public published pages" ON pages;
+CREATE POLICY "Anyone can view public published pages"
+  ON pages FOR SELECT
+  USING (
+    (status = 'published' AND visibility = 'public' AND deleted_at IS NULL)
+    OR is_admin()
+  );
+
+-- Admin can view all pages including drafts and deleted
+DROP POLICY IF EXISTS "Admin can view all pages" ON pages;
+CREATE POLICY "Admin can view all pages"
+  ON pages FOR SELECT
+  USING (is_admin());
+
+-- Admin can insert pages
+DROP POLICY IF EXISTS "Admin can insert pages" ON pages;
+CREATE POLICY "Admin can insert pages"
+  ON pages FOR INSERT
+  WITH CHECK (is_admin());
+
+-- Admin can update pages
+DROP POLICY IF EXISTS "Admin can update pages" ON pages;
+CREATE POLICY "Admin can update pages"
+  ON pages FOR UPDATE
+  USING (is_admin());
+
+-- Admin can delete pages
+DROP POLICY IF EXISTS "Admin can delete pages" ON pages;
+CREATE POLICY "Admin can delete pages"
+  ON pages FOR DELETE
+  USING (is_admin());
+
+-- ============================================================
+-- BLOCK 15: PAGE BLOCKS RLS POLICIES
+-- ============================================================
+
+-- Guests can view blocks of public published pages
+DROP POLICY IF EXISTS "Anyone can view blocks of public pages" ON page_blocks;
+CREATE POLICY "Anyone can view blocks of public pages"
+  ON page_blocks FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM pages
+      WHERE pages.id = page_blocks.page_id
+      AND (
+        (pages.status = 'published' AND pages.visibility = 'public' AND pages.deleted_at IS NULL)
+        OR is_admin()
+      )
+    )
+  );
+
+-- Admin can insert blocks
+DROP POLICY IF EXISTS "Admin can insert blocks" ON page_blocks;
+CREATE POLICY "Admin can insert blocks"
+  ON page_blocks FOR INSERT
+  WITH CHECK (is_admin());
+
+-- Admin can update blocks
+DROP POLICY IF EXISTS "Admin can update blocks" ON page_blocks;
+CREATE POLICY "Admin can update blocks"
+  ON page_blocks FOR UPDATE
+  USING (is_admin());
+
+-- Admin can delete blocks
+DROP POLICY IF EXISTS "Admin can delete blocks" ON page_blocks;
+CREATE POLICY "Admin can delete blocks"
+  ON page_blocks FOR DELETE
+  USING (is_admin());
+
+-- ============================================================
+-- BLOCK 16: SNIPPETS RLS POLICIES
+-- ============================================================
+
+-- Anyone can view public snippets
+DROP POLICY IF EXISTS "Anyone can view public snippets" ON snippets;
+CREATE POLICY "Anyone can view public snippets"
+  ON snippets FOR SELECT
+  USING (
+    (visibility = 'public' AND deleted_at IS NULL)
+    OR is_admin()
+  );
+
+-- Admin can insert snippets
+DROP POLICY IF EXISTS "Admin can insert snippets" ON snippets;
+CREATE POLICY "Admin can insert snippets"
+  ON snippets FOR INSERT
+  WITH CHECK (is_admin());
+
+-- Admin can update snippets
+DROP POLICY IF EXISTS "Admin can update snippets" ON snippets;
+CREATE POLICY "Admin can update snippets"
+  ON snippets FOR UPDATE
+  USING (is_admin());
+
+-- Admin can delete snippets
+DROP POLICY IF EXISTS "Admin can delete snippets" ON snippets;
+CREATE POLICY "Admin can delete snippets"
+  ON snippets FOR DELETE
+  USING (is_admin());
+
+-- ============================================================
+-- BLOCK 17: NOTIFICATIONS RLS POLICIES
+-- ============================================================
+
+-- Admin can view their own notifications
+DROP POLICY IF EXISTS "Admin can view own notifications" ON notifications;
+CREATE POLICY "Admin can view own notifications"
+  ON notifications FOR SELECT
+  USING (auth.uid() = user_id AND is_admin());
+
+-- Admin can insert notifications
+DROP POLICY IF EXISTS "Admin can insert notifications" ON notifications;
+CREATE POLICY "Admin can insert notifications"
+  ON notifications FOR INSERT
+  WITH CHECK (is_admin());
+
+-- Admin can update (mark as read) their own notifications
+DROP POLICY IF EXISTS "Admin can update own notifications" ON notifications;
+CREATE POLICY "Admin can update own notifications"
+  ON notifications FOR UPDATE
+  USING (auth.uid() = user_id AND is_admin());
+
+-- Admin can delete own notifications
+DROP POLICY IF EXISTS "Admin can delete own notifications" ON notifications;
+CREATE POLICY "Admin can delete own notifications"
+  ON notifications FOR DELETE
+  USING (auth.uid() = user_id AND is_admin());
+
+-- ============================================================
+-- BLOCK 18: ACTIVITY LOGS RLS POLICIES
+-- ============================================================
+
+-- Admin can view activity logs
+DROP POLICY IF EXISTS "Admin can view activity logs" ON activity_logs;
+CREATE POLICY "Admin can view activity logs"
+  ON activity_logs FOR SELECT
+  USING (is_admin());
+
+-- Admin can insert activity logs
+DROP POLICY IF EXISTS "Admin can insert activity logs" ON activity_logs;
+CREATE POLICY "Admin can insert activity logs"
+  ON activity_logs FOR INSERT
+  WITH CHECK (is_admin());
+
+-- ============================================================
+-- BLOCK 19: AUTO-CREATE PROFILE ON USER SIGNUP TRIGGER
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO profiles (id, email, role)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    CASE
+      WHEN NEW.email = 'hasansyaifulhuda24@gmail.com' THEN 'admin'
+      ELSE 'guest'
+    END
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION handle_new_user();
+
+-- ============================================================
+-- BLOCK 20: SEED DEFAULT CATEGORIES
+-- ============================================================
+
+INSERT INTO categories (name, slug, icon, sort_order) VALUES
+  ('HTML', 'html', 'code', 1),
+  ('CSS', 'css', 'palette', 2),
+  ('JavaScript', 'javascript', 'zap', 3),
+  ('Supabase', 'supabase', 'database', 4),
+  ('GitHub', 'github', 'github', 5),
+  ('Snippets', 'snippets', 'scissors', 6)
+ON CONFLICT (slug) DO NOTHING;
+
+-- ============================================================
+-- BLOCK 21: SAMPLE STARTER PAGE AND BLOCKS
+-- ============================================================
+
+-- NOTE: Run this AFTER creating your admin user in Supabase Auth
+-- and AFTER the profile trigger has created your admin profile.
+-- Replace 'YOUR_ADMIN_UUID' with your actual admin user UUID.
+-- You can find this in Authentication > Users in Supabase dashboard.
+
+-- Sample page (optional - uncomment and replace UUID to use)
+/*
+INSERT INTO pages (
+  category_id,
+  title,
+  slug,
+  description,
+  status,
+  visibility,
+  is_pinned,
+  sort_order,
+  created_by
+)
+SELECT
+  c.id,
+  'Pengenalan HTML',
+  'pengenalan-html',
+  'Panduan lengkap pengenalan HTML untuk pemula',
+  'published',
+  'public',
+  true,
+  1,
+  au.id
+FROM categories c, auth.users au
+WHERE c.slug = 'html'
+AND au.email = 'hasansyaifulhuda24@gmail.com'
+LIMIT 1;
+
+INSERT INTO page_blocks (page_id, type, content, language, sort_order)
+SELECT
+  p.id,
+  'heading',
+  '{"level": 1, "text": "Pengenalan HTML"}',
+  null,
+  1
+FROM pages p
+WHERE p.slug = 'pengenalan-html';
+
+INSERT INTO page_blocks (page_id, type, content, language, sort_order)
+SELECT
+  p.id,
+  'text',
+  'HTML (HyperText Markup Language) adalah bahasa standar untuk membuat halaman web. HTML mendefinisikan struktur dan konten dari sebuah halaman web menggunakan elemen-elemen yang diwakili oleh tag.',
+  null,
+  2
+FROM pages p
+WHERE p.slug = 'pengenalan-html';
+
+INSERT INTO page_blocks (page_id, type, content, language, sort_order)
+SELECT
+  p.id,
+  'code',
+  '<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Halaman Pertamaku</title>
+</head>
+<body>
+  <h1>Halo Dunia!</h1>
+  <p>Ini adalah halaman HTML pertamaku.</p>
+</body>
+</html>',
+  'html',
+  3
+FROM pages p
+WHERE p.slug = 'pengenalan-html';
+*/
+
+-- ============================================================
+-- VERIFICATION QUERIES
+-- ============================================================
+
+-- Run these to verify your setup:
+
+-- Check categories were created:
+-- SELECT * FROM categories ORDER BY sort_order;
+
+-- Check tables exist:
+-- SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';
+
+-- Check RLS is enabled:
+-- SELECT tablename, rowsecurity FROM pg_tables WHERE schemaname = 'public';
+
+================================================================================
+SUPABASE AUTH ADMIN SETUP
+================================================================================
+
+IMPORTANT: Create the admin user manually in Supabase Dashboard.
+Do NOT create auth.users via SQL directly.
+
+Steps:
+1. Go to Supabase Dashboard
+2. Click "Authentication" in sidebar
+3. Click "Users" tab
+4. Click "Add user" button
+5. Select "Create new user"
+6. Enter:
+   Email: hasansyaifulhuda24@gmail.com
+   Password: Shannn24.
+7. Click "Create user"
+
+The trigger (BLOCK 19) will automatically create the admin profile
+with role = 'admin' when this user is created.
+
+================================================================================
+SECURITY REMINDERS
+================================================================================
+
+1. NEVER use service_role key in frontend JavaScript
+2. ONLY use the anon/public key in supabase.js
+3. RLS policies protect your data even if anon key is exposed
+4. Keep your service_role key secret
+5. Use environment variables in production CI/CD pipelines
+6. Regularly rotate your database password
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+Problem: Login fails
+Solution: Check that admin user was created in Supabase Auth (not via SQL)
+          Check that email/password match exactly
+
+Problem: Cannot see data as admin
+Solution: Verify the trigger created the profile with role='admin'
+          Run: SELECT * FROM profiles WHERE email = 'hasansyaifulhuda24@gmail.com';
+          If role is not 'admin', run:
+          UPDATE profiles SET role = 'admin' WHERE email = 'hasansyaifulhuda24@gmail.com';
+
+Problem: RLS blocking guest access
+Solution: Verify pages have status='published' AND visibility='public' AND deleted_at IS NULL
+
+Problem: Trigger not creating profiles
+Solution: Verify trigger was created: SELECT * FROM pg_trigger WHERE tgname = 'on_auth_user_created';
+
+================================================================================

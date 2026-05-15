@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="DEVVAULT - Personal Developer Knowledge Workspace & Coding Documentation Vault" />
+  <meta name="theme-color" content="#0b1120" />
+
+  <title>DEVVAULT</title>
+
+  <!-- Favicon SVG inline -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230b1120'/><rect width='32' height='32' rx='7' fill='url(%23grad)'/><defs><linearGradient id='grad' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%2338bdf8'/><stop offset='1' stop-color='%237c3aed'/></linearGradient></defs><polyline points='10,20 4,16 10,12' stroke='white' stroke-width='2.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/><polyline points='22,12 28,16 22,20' stroke='white' stroke-width='2.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/><line x1='14' y1='22' x2='18' y2='10' stroke='white' stroke-width='2.2' stroke-linecap='round'/></svg>" />
+
+  <!-- Google Fonts: Inter + JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/themes.css" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/code-theme.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+
+  <!-- Prism.js - Syntax Highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" />
+
+</head>
+
+<body>
+
+  <!-- Loading Screen -->
+  <div id="loading-screen">
+    <div class="loading-logo">
+      <div class="loading-logo-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="16 18 22 12 16 6"/>
+          <polyline points="8 6 2 12 8 18"/>
+        </svg>
+      </div>
+      <span class="loading-logo-text">DEVVAULT</span>
+    </div>
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Memuat workspace...</div>
+  </div>
+
+  <!-- App Root -->
+  <div id="app"></div>
+
+  <!-- Supabase JS CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+  <!-- Supabase Config -->
+  <script src="supabase.js"></script>
+
+  <!-- Prism.js Core -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+
+  <!-- Prism Language Components -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-php.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+
+  <!-- Prism Plugins -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <!-- App Modules (order matters) -->
+  <script src="js/utils.js"></script>
+  <script src="js/supabase-api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/toc.js"></script>
+  <script src="js/search.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script src="js/blocks.js"></script>
+  <script src="js/pages.js"></script>
+  <script src="js/snippets.js"></script>
+  <script src="js/export-json.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/shortcuts.js"></script>
+  <script src="js/router.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
