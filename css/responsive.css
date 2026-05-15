@@ -428,3 +428,12 @@
     font-size: 10px;
   }
 }
+
+
+/* Hide Command Palette button on mobile only.
+   Desktop/laptop/tablet large still shows it. */
+@media (max-width: 768px) {
+  .command-palette-btn {
+    display: none !important;
+  }
+}

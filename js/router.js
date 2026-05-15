@@ -116,7 +116,7 @@ const Router = {
       const welcomeTitle = `<span>DEVVAULT</span>`;
 
       const subMsg = Auth.isAdmin
-        ? 'Kelola dan tulis dokumentasi developer Anda.'
+        ? ''
         : '';
 
       mainContent.innerHTML = `
