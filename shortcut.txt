@@ -1,0 +1,120 @@
+========================================
+DEVVAULT - KEYBOARD SHORTCUTS REFERENCE
+========================================
+
+All shortcuts work in the application context.
+Some shortcuts are Admin-only (marked with [A]).
+
+----------------------------------------
+NAVIGATION
+----------------------------------------
+
+Ctrl + K          Command Palette (search everything)
+Ctrl + F          Search (within current page)
+Ctrl + B          Toggle Sidebar open/close
+Ctrl + Shift + D  Go to Dashboard
+Ctrl + Shift + C  Go to Categories
+Ctrl + Shift + T  Go to Trash [A]
+Ctrl + Shift + H  Go to Settings / Shortcuts Help
+Escape            Close open modal or command palette
+
+----------------------------------------
+VIEW & APPEARANCE
+----------------------------------------
+
+Ctrl + Shift + Q  Toggle Reading Mode
+Ctrl + Shift + L  Toggle Dark / Light Theme
+
+----------------------------------------
+CONTENT (Admin Only)
+----------------------------------------
+
+Ctrl + S          Save current changes (auto-save notice)
+
+----------------------------------------
+MODALS
+----------------------------------------
+
+Escape            Close any open modal
+Enter             Confirm action in focused modal
+
+----------------------------------------
+COMMAND PALETTE (Ctrl+K)
+----------------------------------------
+
+After opening palette:
+  Arrow Up/Down   Navigate results
+  Enter           Select focused result
+  Escape          Close palette
+
+Available commands:
+  > Dashboard     Navigate to dashboard
+  > Snippets      Navigate to snippets
+  > Categories    Navigate to categories
+  > Settings      Navigate to settings
+  > Trash         Navigate to trash [A]
+  > New Page      Create a new page [A]
+  > New Snippet   Create a new snippet [A]
+  > New Category  Create a new category [A]
+  > Export        Export all data [A]
+  > Logout        Sign out [A]
+  > Login         Open login modal
+
+Type any page title to quickly open it.
+
+----------------------------------------
+SEARCH (Ctrl+F)
+----------------------------------------
+
+After opening search:
+  Type            Search within page content
+  Arrow Up/Down   Navigate through results
+  Enter           Jump to next result
+  Escape          Close search
+
+Search covers:
+  - Headings
+  - Text blocks
+  - Code blocks
+  - Quotes
+  - Checklist items
+  - Links
+
+----------------------------------------
+CODE BLOCKS
+----------------------------------------
+
+Copy button       Copy code to clipboard
+Collapse button   Toggle code block collapse
+Fullscreen btn    Enter/exit fullscreen code view
+Escape            Exit fullscreen mode
+
+----------------------------------------
+SIDEBAR
+----------------------------------------
+
+Click category    Expand/collapse category pages
+Click page        Open page in tab system
++ button          Add page to category [A]
+Menu button       Edit category options [A]
+
+----------------------------------------
+TABS
+----------------------------------------
+
+Click tab         Switch to that page
+X button          Close tab
+Scroll            Scroll through open tabs
+
+----------------------------------------
+NOTES
+----------------------------------------
+
+[A] = Admin login required
+Mac users: Use Cmd instead of Ctrl for most shortcuts
+Shortcuts may be browser-overridden in some cases (Ctrl+S, Ctrl+F)
+DevVault prevents default browser behavior for most shortcuts
+
+========================================
+For more info, visit Settings > Shortcuts
+========================================

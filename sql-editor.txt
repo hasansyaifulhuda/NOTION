@@ -1,0 +1,662 @@
+========================================
+DEVVAULT - SUPABASE SQL SCHEMA
+========================================
+
+INSTRUCTIONS:
+1. Open Supabase Dashboard
+2. Navigate to SQL Editor (left sidebar)
+3. Copy this entire file content
+4. Paste into the SQL editor
+5. Click "Run" to execute
+6. This script is SAFE TO RERUN (idempotent)
+
+ADMIN ACCOUNT SETUP (after running SQL):
+1. Go to Authentication → Users
+2. Click "Add User" → "Create new user"
+3. Email:    hasansyaifulhuda24@gmail.com
+4. Password: shanz
+5. Check "Auto Confirm User"
+6. Click "Create User"
+
+========================================
+PART 1: EXTENSIONS
+========================================
+
+-- Enable UUID generation
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+========================================
+PART 2: DROP EXISTING POLICIES (SAFE RERUN)
+========================================
+
+-- Drop all existing policies to avoid conflicts
+DO $$
+DECLARE
+  r RECORD;
+BEGIN
+  FOR r IN
+    SELECT schemaname, tablename, policyname
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename IN ('profiles','categories','pages','page_blocks','snippets','notifications','activity_logs')
+  LOOP
+    EXECUTE format('DROP POLICY IF EXISTS %I ON %I.%I',
+      r.policyname, r.schemaname, r.tablename);
+  END LOOP;
+END
+$$;
+
+========================================
+PART 3: DROP EXISTING TRIGGERS (SAFE RERUN)
+========================================
+
+DROP TRIGGER IF EXISTS set_profiles_updated_at ON public.profiles;
+DROP TRIGGER IF EXISTS set_categories_updated_at ON public.categories;
+DROP TRIGGER IF EXISTS set_pages_updated_at ON public.pages;
+DROP TRIGGER IF EXISTS set_page_blocks_updated_at ON public.page_blocks;
+DROP TRIGGER IF EXISTS set_snippets_updated_at ON public.snippets;
+DROP TRIGGER IF EXISTS set_notifications_updated_at ON public.notifications;
+DROP TRIGGER IF EXISTS set_activity_logs_updated_at ON public.activity_logs;
+
+========================================
+PART 4: DROP EXISTING FUNCTIONS (SAFE RERUN)
+========================================
+
+DROP FUNCTION IF EXISTS public.handle_updated_at() CASCADE;
+
+========================================
+PART 5: CREATE TABLES
+========================================
+
+-- ─── Profiles ───
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id          UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email       TEXT,
+  role        TEXT NOT NULL DEFAULT 'guest' CHECK (role IN ('admin', 'guest')),
+  avatar_url  TEXT,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ─── Categories ───
+CREATE TABLE IF NOT EXISTS public.categories (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name        TEXT NOT NULL,
+  icon        TEXT NOT NULL DEFAULT 'folder',
+  color       TEXT NOT NULL DEFAULT '#38bdf8',
+  order_index INTEGER NOT NULL DEFAULT 0,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ─── Pages ───
+CREATE TABLE IF NOT EXISTS public.pages (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title       TEXT NOT NULL,
+  description TEXT DEFAULT '',
+  category_id UUID REFERENCES public.categories(id) ON DELETE SET NULL,
+  status      TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published')),
+  visibility  TEXT NOT NULL DEFAULT 'public' CHECK (visibility IN ('public', 'private')),
+  pinned      BOOLEAN NOT NULL DEFAULT FALSE,
+  deleted     BOOLEAN NOT NULL DEFAULT FALSE,
+  order_index INTEGER NOT NULL DEFAULT 0,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ─── Page Blocks ───
+CREATE TABLE IF NOT EXISTS public.page_blocks (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  page_id     UUID NOT NULL REFERENCES public.pages(id) ON DELETE CASCADE,
+  type        TEXT NOT NULL CHECK (type IN ('heading','text','code','quote','link','checklist','snippet_embed')),
+  content     JSONB NOT NULL DEFAULT '{}',
+  order_index INTEGER NOT NULL DEFAULT 0,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ─── Snippets ───
+CREATE TABLE IF NOT EXISTS public.snippets (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title       TEXT NOT NULL,
+  description TEXT DEFAULT '',
+  language    TEXT NOT NULL DEFAULT 'javascript',
+  code        TEXT NOT NULL DEFAULT '',
+  category_id UUID REFERENCES public.categories(id) ON DELETE SET NULL,
+  is_public   BOOLEAN NOT NULL DEFAULT TRUE,
+  deleted     BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ─── Notifications ───
+CREATE TABLE IF NOT EXISTS public.notifications (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  title       TEXT NOT NULL,
+  type        TEXT NOT NULL DEFAULT 'info' CHECK (type IN ('success','warning','error','info')),
+  meta        TEXT DEFAULT '',
+  read        BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ─── Activity Logs ───
+CREATE TABLE IF NOT EXISTS public.activity_logs (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  action      TEXT NOT NULL,
+  resource    TEXT NOT NULL,
+  resource_id UUID,
+  metadata    JSONB DEFAULT '{}',
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+========================================
+PART 6: INDEXES
+========================================
+
+-- Categories
+CREATE INDEX IF NOT EXISTS idx_categories_order ON public.categories(order_index);
+
+-- Pages
+CREATE INDEX IF NOT EXISTS idx_pages_category ON public.pages(category_id);
+CREATE INDEX IF NOT EXISTS idx_pages_status ON public.pages(status);
+CREATE INDEX IF NOT EXISTS idx_pages_visibility ON public.pages(visibility);
+CREATE INDEX IF NOT EXISTS idx_pages_deleted ON public.pages(deleted);
+CREATE INDEX IF NOT EXISTS idx_pages_order ON public.pages(order_index);
+CREATE INDEX IF NOT EXISTS idx_pages_pinned ON public.pages(pinned);
+
+-- Page Blocks
+CREATE INDEX IF NOT EXISTS idx_blocks_page ON public.page_blocks(page_id);
+CREATE INDEX IF NOT EXISTS idx_blocks_order ON public.page_blocks(order_index);
+CREATE INDEX IF NOT EXISTS idx_blocks_type ON public.page_blocks(type);
+
+-- Snippets
+CREATE INDEX IF NOT EXISTS idx_snippets_language ON public.snippets(language);
+CREATE INDEX IF NOT EXISTS idx_snippets_category ON public.snippets(category_id);
+CREATE INDEX IF NOT EXISTS idx_snippets_public ON public.snippets(is_public);
+CREATE INDEX IF NOT EXISTS idx_snippets_deleted ON public.snippets(deleted);
+
+-- Notifications
+CREATE INDEX IF NOT EXISTS idx_notifs_user ON public.notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifs_read ON public.notifications(read);
+
+-- Activity Logs
+CREATE INDEX IF NOT EXISTS idx_logs_user ON public.activity_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_logs_resource ON public.activity_logs(resource);
+CREATE INDEX IF NOT EXISTS idx_logs_created ON public.activity_logs(created_at);
+
+========================================
+PART 7: TRIGGER FUNCTION
+========================================
+
+CREATE OR REPLACE FUNCTION public.handle_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+========================================
+PART 8: TRIGGERS
+========================================
+
+CREATE TRIGGER set_profiles_updated_at
+  BEFORE UPDATE ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+CREATE TRIGGER set_categories_updated_at
+  BEFORE UPDATE ON public.categories
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+CREATE TRIGGER set_pages_updated_at
+  BEFORE UPDATE ON public.pages
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+CREATE TRIGGER set_page_blocks_updated_at
+  BEFORE UPDATE ON public.page_blocks
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+CREATE TRIGGER set_snippets_updated_at
+  BEFORE UPDATE ON public.snippets
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+CREATE TRIGGER set_notifications_updated_at
+  BEFORE UPDATE ON public.notifications
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+CREATE TRIGGER set_activity_logs_updated_at
+  BEFORE UPDATE ON public.activity_logs
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+========================================
+PART 9: ROW LEVEL SECURITY (RLS)
+========================================
+
+-- Enable RLS on all tables
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.pages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.page_blocks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.snippets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.activity_logs ENABLE ROW LEVEL SECURITY;
+
+========================================
+PART 10: RLS POLICIES
+========================================
+
+-- ─── Profiles ───
+
+CREATE POLICY "Profiles: users can read own profile"
+  ON public.profiles FOR SELECT
+  USING (auth.uid() = id);
+
+CREATE POLICY "Profiles: users can update own profile"
+  ON public.profiles FOR UPDATE
+  USING (auth.uid() = id);
+
+CREATE POLICY "Profiles: service can insert profiles"
+  ON public.profiles FOR INSERT
+  WITH CHECK (auth.uid() = id);
+
+-- ─── Categories ───
+
+-- Guests can read categories
+CREATE POLICY "Categories: public read"
+  ON public.categories FOR SELECT
+  TO anon, authenticated
+  USING (true);
+
+-- Only authenticated admin can write
+CREATE POLICY "Categories: admin insert"
+  ON public.categories FOR INSERT
+  TO authenticated
+  WITH CHECK (true);
+
+CREATE POLICY "Categories: admin update"
+  ON public.categories FOR UPDATE
+  TO authenticated
+  USING (true);
+
+CREATE POLICY "Categories: admin delete"
+  ON public.categories FOR DELETE
+  TO authenticated
+  USING (true);
+
+-- ─── Pages ───
+
+-- Guests can only read published public non-deleted pages
+CREATE POLICY "Pages: guest read published public"
+  ON public.pages FOR SELECT
+  TO anon
+  USING (status = 'published' AND visibility = 'public' AND deleted = false);
+
+-- Authenticated users can read all non-deleted pages
+CREATE POLICY "Pages: auth read all"
+  ON public.pages FOR SELECT
+  TO authenticated
+  USING (deleted = false OR deleted = true);
+
+-- Admin can insert
+CREATE POLICY "Pages: admin insert"
+  ON public.pages FOR INSERT
+  TO authenticated
+  WITH CHECK (true);
+
+-- Admin can update
+CREATE POLICY "Pages: admin update"
+  ON public.pages FOR UPDATE
+  TO authenticated
+  USING (true);
+
+-- Admin can delete
+CREATE POLICY "Pages: admin delete"
+  ON public.pages FOR DELETE
+  TO authenticated
+  USING (true);
+
+-- ─── Page Blocks ───
+
+-- Guests can read blocks of public published pages
+CREATE POLICY "Blocks: guest read via page"
+  ON public.page_blocks FOR SELECT
+  TO anon
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.pages p
+      WHERE p.id = page_id
+        AND p.status = 'published'
+        AND p.visibility = 'public'
+        AND p.deleted = false
+    )
+  );
+
+-- Auth users can read all blocks
+CREATE POLICY "Blocks: auth read all"
+  ON public.page_blocks FOR SELECT
+  TO authenticated
+  USING (true);
+
+-- Admin can write blocks
+CREATE POLICY "Blocks: admin insert"
+  ON public.page_blocks FOR INSERT
+  TO authenticated
+  WITH CHECK (true);
+
+CREATE POLICY "Blocks: admin update"
+  ON public.page_blocks FOR UPDATE
+  TO authenticated
+  USING (true);
+
+CREATE POLICY "Blocks: admin delete"
+  ON public.page_blocks FOR DELETE
+  TO authenticated
+  USING (true);
+
+-- ─── Snippets ───
+
+-- Guests read public snippets
+CREATE POLICY "Snippets: guest read public"
+  ON public.snippets FOR SELECT
+  TO anon
+  USING (is_public = true AND deleted = false);
+
+-- Auth users read all snippets
+CREATE POLICY "Snippets: auth read all"
+  ON public.snippets FOR SELECT
+  TO authenticated
+  USING (true);
+
+-- Admin write snippets
+CREATE POLICY "Snippets: admin insert"
+  ON public.snippets FOR INSERT
+  TO authenticated
+  WITH CHECK (true);
+
+CREATE POLICY "Snippets: admin update"
+  ON public.snippets FOR UPDATE
+  TO authenticated
+  USING (true);
+
+CREATE POLICY "Snippets: admin delete"
+  ON public.snippets FOR DELETE
+  TO authenticated
+  USING (true);
+
+-- ─── Notifications ───
+
+-- Users can only see their own notifications
+CREATE POLICY "Notifications: read own"
+  ON public.notifications FOR SELECT
+  TO authenticated
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Notifications: insert own"
+  ON public.notifications FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Notifications: update own"
+  ON public.notifications FOR UPDATE
+  TO authenticated
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Notifications: delete own"
+  ON public.notifications FOR DELETE
+  TO authenticated
+  USING (auth.uid() = user_id);
+
+-- ─── Activity Logs ───
+
+-- Only authenticated users can see logs
+CREATE POLICY "Logs: auth read"
+  ON public.activity_logs FOR SELECT
+  TO authenticated
+  USING (true);
+
+CREATE POLICY "Logs: auth insert"
+  ON public.activity_logs FOR INSERT
+  TO authenticated
+  WITH CHECK (true);
+
+========================================
+PART 11: SEED DATA
+========================================
+
+-- Default categories (safe to rerun with ON CONFLICT DO NOTHING)
+INSERT INTO public.categories (id, name, icon, color, order_index)
+VALUES
+  ('00000000-0000-0000-0000-000000000001', 'Getting Started', 'book-open', '#38bdf8', 0),
+  ('00000000-0000-0000-0000-000000000002', 'JavaScript', 'code-2', '#f59e0b', 1),
+  ('00000000-0000-0000-0000-000000000003', 'CSS & Styling', 'palette', '#8b5cf6', 2),
+  ('00000000-0000-0000-0000-000000000004', 'Database', 'database', '#22c55e', 3)
+ON CONFLICT (id) DO NOTHING;
+
+-- Welcome page
+INSERT INTO public.pages (id, title, description, category_id, status, visibility, pinned, order_index)
+VALUES
+  (
+    '00000000-0000-0000-0001-000000000001',
+    'Welcome to DevVault',
+    'Your developer knowledge workspace',
+    '00000000-0000-0000-0000-000000000001',
+    'published',
+    'public',
+    true,
+    0
+  )
+ON CONFLICT (id) DO NOTHING;
+
+-- Welcome page blocks
+INSERT INTO public.page_blocks (id, page_id, type, content, order_index)
+VALUES
+  (
+    '00000000-0000-0001-0000-000000000001',
+    '00000000-0000-0000-0001-000000000001',
+    'heading',
+    '{"level": 1, "text": "Welcome to DevVault"}',
+    0
+  ),
+  (
+    '00000000-0000-0001-0000-000000000002',
+    '00000000-0000-0000-0001-000000000001',
+    'text',
+    '{"text": "DevVault is your personal developer knowledge workspace. Organize documentation, code snippets, and notes in one elegant, distraction-free environment."}',
+    1
+  ),
+  (
+    '00000000-0000-0001-0000-000000000003',
+    '00000000-0000-0000-0001-000000000001',
+    'heading',
+    '{"level": 2, "text": "Getting Started"}',
+    2
+  ),
+  (
+    '00000000-0000-0001-0000-000000000004',
+    '00000000-0000-0000-0001-000000000001',
+    'checklist',
+    '{"items": ["Configure Supabase credentials in supabase.js", "Run the SQL schema in Supabase SQL Editor", "Create your admin account via Supabase Authentication", "Login and start creating documentation", "Organize content with categories"]}',
+    3
+  ),
+  (
+    '00000000-0000-0001-0000-000000000005',
+    '00000000-0000-0000-0001-000000000001',
+    'quote',
+    '{"text": "The best documentation is the one you actually maintain. DevVault makes it effortless.", "author": "DevVault"}',
+    4
+  )
+ON CONFLICT (id) DO NOTHING;
+
+-- Sample JavaScript page
+INSERT INTO public.pages (id, title, description, category_id, status, visibility, pinned, order_index)
+VALUES
+  (
+    '00000000-0000-0000-0001-000000000002',
+    'JavaScript Fundamentals',
+    'Core JS concepts every developer should know',
+    '00000000-0000-0000-0000-000000000002',
+    'published',
+    'public',
+    false,
+    0
+  )
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.page_blocks (id, page_id, type, content, order_index)
+VALUES
+  (
+    '00000000-0000-0001-0001-000000000001',
+    '00000000-0000-0000-0001-000000000002',
+    'heading',
+    '{"level": 1, "text": "JavaScript Fundamentals"}',
+    0
+  ),
+  (
+    '00000000-0000-0001-0001-000000000002',
+    '00000000-0000-0000-0001-000000000002',
+    'heading',
+    '{"level": 2, "text": "Variable Declarations"}',
+    1
+  ),
+  (
+    '00000000-0000-0001-0001-000000000003',
+    '00000000-0000-0000-0001-000000000002',
+    'code',
+    '{"language": "javascript", "code": "// const - immutable binding\nconst API_URL = \"https://api.example.com\";\n\n// let - mutable binding\nlet count = 0;\n\n// Destructuring\nconst { name, age } = user;\nconst [first, ...rest] = array;\n\n// Template literals\nconst message = `Hello, ${name}! You are ${age} years old.`;"}',
+    2
+  )
+ON CONFLICT (id) DO NOTHING;
+
+-- Sample snippets
+INSERT INTO public.snippets (id, title, description, language, code, category_id, is_public)
+VALUES
+  (
+    '00000000-0000-0002-0000-000000000001',
+    'Fetch with async/await',
+    'Modern HTTP request pattern',
+    'javascript',
+    'async function fetchData(url) {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error(''Fetch failed:'', error);
+    throw error;
+  }
+}',
+    '00000000-0000-0000-0000-000000000002',
+    true
+  ),
+  (
+    '00000000-0000-0002-0000-000000000002',
+    'CSS Flexbox Center',
+    'Center content using flexbox',
+    'css',
+    '.container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}',
+    '00000000-0000-0000-0000-000000000003',
+    true
+  ),
+  (
+    '00000000-0000-0002-0000-000000000003',
+    'SQL Join Query',
+    'Basic inner join with filtering',
+    'sql',
+    'SELECT
+  u.id,
+  u.email,
+  p.title AS page_title
+FROM users u
+INNER JOIN pages p ON p.user_id = u.id
+WHERE p.status = ''published''
+ORDER BY p.created_at DESC
+LIMIT 10;',
+    '00000000-0000-0000-0000-000000000004',
+    true
+  )
+ON CONFLICT (id) DO NOTHING;
+
+========================================
+PART 12: PROFILE AUTO-CREATE TRIGGER
+========================================
+
+-- Create a profile when a user signs up
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, role)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    'admin'  -- First registered user gets admin role
+  )
+  ON CONFLICT (id) DO NOTHING;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+========================================
+TROUBLESHOOTING
+========================================
+
+ISSUE: "relation does not exist" error
+SOLUTION: Make sure you're running SQL in the correct Supabase project
+
+ISSUE: RLS policy blocking reads
+SOLUTION: Verify that categories and published pages have correct RLS policies.
+Use Supabase Dashboard > Authentication > Policies to inspect.
+
+ISSUE: Admin can't write to database
+SOLUTION: Check RLS policies for INSERT/UPDATE/DELETE allow authenticated users.
+
+ISSUE: Trigger already exists error
+SOLUTION: Run Part 3 (DROP TRIGGERS) section first, or use the full script
+which handles this automatically with DROP IF EXISTS.
+
+ISSUE: Foreign key violation
+SOLUTION: Always create categories before pages that reference them.
+Seed data is ordered correctly.
+
+ISSUE: Can't login after creating user
+SOLUTION: Ensure user email is confirmed in Supabase Dashboard > Authentication > Users.
+The "Auto Confirm User" checkbox must be checked during user creation.
+
+ISSUE: Pages show as empty after login
+SOLUTION: Ensure seed data was inserted successfully (Part 11).
+Check the Supabase Table Editor to verify rows exist.
+
+========================================
+ADMIN SETUP CHECKLIST
+========================================
+
+[ ] Run this SQL in Supabase SQL Editor
+[ ] Verify tables created in Table Editor
+[ ] Create admin user in Authentication → Users
+    Email:    hasansyaifulhuda24@gmail.com
+    Password: shanz
+    Auto Confirm: YES
+[ ] Configure supabase.js with your project URL and anon key
+[ ] Deploy to Vercel/Netlify or run locally
+[ ] Login with admin credentials
+[ ] Start creating documentation!
+
+========================================
+END OF SQL SCHEMA
+========================================

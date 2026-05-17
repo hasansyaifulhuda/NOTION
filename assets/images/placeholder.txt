@@ -1,0 +1,13 @@
+DevVault - Images Directory
+
+This directory is reserved for static image assets.
+
+Usage:
+- Place documentation images here
+- Reference them in page blocks using the 'link' block type
+- Optimize images before uploading (use WebP format for best performance)
+
+Recommended image sizes:
+- Open Graph image: 1200x630px
+- Hero images: 1920x1080px
+- Thumbnails: 400x300px

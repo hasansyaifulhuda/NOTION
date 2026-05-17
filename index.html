@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="DevVault" />
+  <title>DevVault</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="assets/favicon/favicon.svg" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <!-- Prism.js CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js" defer></script>
+
+  <!-- CSS Modules -->
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/themes.css" />
+  <link rel="stylesheet" href="css/code-theme.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+</head>
+<body>
+
+  <!-- App Shell -->
+  <div id="app" class="app-shell" role="application" aria-label="DevVault Aplikasi">
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar" role="navigation" aria-label="Navigasi utama">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="logo-icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            </svg>
+          </div>
+          <span class="logo-text">DevVault</span>
+        </div>
+        <button id="sidebar-close-btn" class="icon-btn sidebar-close" aria-label="Tutup sidebar">
+          <i data-lucide="x" aria-hidden="true"></i>
+        </button>
+      </div>
+
+      <!-- Search Trigger -->
+      <div class="sidebar-search-trigger" id="sidebar-search-trigger" role="button" tabindex="0" aria-label="Cari Halaman (Ctrl+F)">
+        <i data-lucide="search" aria-hidden="true"></i>
+        <span>cari...</span>
+        <kbd class="shortcut-badge">Ctrl+F</kbd>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="sidebar-nav" aria-label="App Navigation">
+        <a href="#/dashboard" class="nav-item" data-route="/dashboard" aria-label="Beranda">
+          <i data-lucide="layout-dashboard" aria-hidden="true"></i>
+          <span>Beranda</span>
+        </a>
+        <a href="#/snippets" class="nav-item" data-route="/snippets" aria-label="Snippet">
+          <i data-lucide="code-2" aria-hidden="true"></i>
+          <span>Snippet</span>
+        </a>
+        <a href="#/categories" class="nav-item" data-route="/categories" aria-label="kategori">
+          <i data-lucide="folder" aria-hidden="true"></i>
+          <span>Kategori</span>
+        </a>
+      </nav>
+
+      <!-- Categories Tree -->
+      <div class="sidebar-section">
+        <div class="sidebar-section-header">
+          <span>Dokumentasi</span>
+          <button id="add-category-btn" class="icon-btn admin-only" aria-label="Tambah Kategori" style="display:none;">
+            <i data-lucide="plus" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div id="sidebar-categories" class="sidebar-categories" role="tree" aria-label="Kategori dokumentasi">
+          <div class="sidebar-skeleton">
+            <div class="skeleton-item"></div>
+            <div class="skeleton-item"></div>
+            <div class="skeleton-item"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sidebar Footer -->
+      <div class="sidebar-footer">
+        <div id="admin-actions" class="admin-only" style="display:none;">
+          <a href="#/trash" class="nav-item-sm" data-route="/trash" aria-label="Sampah">
+            <i data-lucide="trash-2" aria-hidden="true"></i>
+            <span>Sampah</span>
+          </a>
+        </div>
+        <a href="#/settings" class="nav-item-sm" data-route="/settings" aria-label="Pengaturan">
+          <i data-lucide="settings" aria-hidden="true"></i>
+          <span>Pengaturan</span>
+        </a>
+        <div id="user-badge" class="user-badge">
+          <div class="user-avatar" aria-hidden="true">
+            <i data-lucide="user" aria-hidden="true"></i>
+          </div>
+          <div class="user-info">
+            <span id="user-email" class="user-email">Guest</span>
+            <span id="user-role" class="user-role">Pembaca</span>
+          </div>
+          <button id="logout-btn" class="icon-btn admin-only" aria-label="Keluar" style="display:none;">
+            <i data-lucide="log-out" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Sidebar Overlay (mobile) -->
+    <div id="sidebar-overlay" class="sidebar-overlay" aria-hidden="true"></div>
+
+    <!-- Main Content Wrapper -->
+    <div class="main-wrapper">
+
+      <!-- Top Bar -->
+      <header class="topbar" role="banner">
+        <div class="topbar-left">
+          <button id="sidebar-toggle" class="icon-btn" aria-label="buka/tutup sidebar" aria-expanded="false">
+            <i data-lucide="menu" aria-hidden="true"></i>
+          </button>
+          <div id="breadcrumb" class="breadcrumb" aria-label="Breadcrumb navigation" role="navigation">
+            <span class="breadcrumb-item">DevVault</span>
+          </div>
+        </div>
+        <div class="topbar-center">
+          <div id="tabs-container" class="tabs-container" role="tablist" aria-label="Tab Halaman Terbuka"></div>
+        </div>
+        <div class="topbar-right">
+          <button id="cmd-palette-btn" class="icon-btn" aria-label="Command Palette (Ctrl+K)" title="Command Palette (Ctrl+K)">
+            <i data-lucide="command" aria-hidden="true"></i>
+          </button>
+          <button id="reading-mode-btn" class="icon-btn" aria-label="Mode Pembaca" title="Mode Pembaca">
+            <i data-lucide="book-open" aria-hidden="true"></i>
+          </button>
+          <button id="theme-toggle-btn" class="icon-btn" aria-label="Toggle theme" title="Ganti Tema">
+            <i data-lucide="sun" aria-hidden="true"></i>
+          </button>
+          <button id="mobile-search-btn" class="icon-btn mobile-only" aria-label="Cari">
+            <i data-lucide="search" aria-hidden="true"></i>
+          </button>
+          <button id="login-btn" class="btn btn-primary guest-only" aria-label="Masuk Sebagai Admin">
+            <i data-lucide="lock" aria-hidden="true"></i>
+            <span>Masuk</span>
+          </button>
+          <div id="notification-btn-wrapper" class="admin-only" style="display:none;">
+            <button id="notification-btn" class="icon-btn" aria-label="Notifications" title="Notifications">
+              <i data-lucide="bell" aria-hidden="true"></i>
+              <span id="notif-badge" class="notif-badge" aria-hidden="true" style="display:none;">0</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <main id="main-content" class="main-content" role="main" aria-live="polite">
+        <!-- Dynamic content rendered here -->
+        <div id="loading-overlay" class="loading-overlay" aria-live="assertive" aria-label="Loading">
+          <div class="loading-spinner" aria-hidden="true"></div>
+          <span>Loading...</span>
+        </div>
+      </main>
+
+      <!-- Reading Progress Bar -->
+      <div id="reading-progress" class="reading-progress" aria-hidden="true" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+    </div>
+
+    <!-- Right TOC (Desktop) -->
+    <aside id="toc-panel" class="toc-panel" role="complementary" aria-label="Daftar isi">
+      <div class="toc-header">
+        <span>Di Halaman Ini</span>
+      </div>
+      <nav id="toc-content" class="toc-content" aria-label="Navigasi daftar isi"></nav>
+    </aside>
+  </div>
+
+  <!-- ====== MODALS ====== -->
+
+  <!-- Login Modal -->
+  <div id="login-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="login-modal-title" style="display:none;">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h2 id="login-modal-title" class="modal-title">Admin</h2>
+        <button class="icon-btn modal-close" data-modal="login-modal" aria-label="Close modal">
+          <i data-lucide="x" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="login-supabase-warning" class="alert alert-warning" style="display:none;">
+          <i data-lucide="alert-triangle" aria-hidden="true"></i>
+          Supabase belum dikonfigurasi. Autentikasi tidak tersedia.
+        </div>
+        <form id="login-form" novalidate>
+          <div class="form-group">
+            <label for="login-email" class="form-label">Email</label>
+            <input type="email" id="login-email" class="form-input" placeholder="admin@example.com" required autocomplete="email" />
+            <span id="login-email-error" class="form-error" role="alert"></span>
+          </div>
+          <div class="form-group">
+            <label for="login-password" class="form-label">Password</label>
+            <input type="password" id="login-password" class="form-input" placeholder="••••••••" required autocomplete="current-password" />
+            <span id="login-password-error" class="form-error" role="alert"></span>
+          </div>
+          <div id="login-general-error" class="form-error" role="alert" style="display:none;"></div>
+          <button type="submit" id="login-submit-btn" class="btn btn-primary btn-full">
+            <span id="login-btn-text">Masuk</span>
+            <span id="login-btn-loading" style="display:none;">Sedang Masuk...</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Command Palette -->
+  <div id="cmd-palette-overlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="cmd-palette-title" style="display:none;">
+    <div class="modal modal-cmd">
+      <div class="cmd-palette-search">
+        <i data-lucide="search" aria-hidden="true"></i>
+        <input type="text" id="cmd-input" class="cmd-input" placeholder="Cari halaman, perintah..." aria-label="Pencarian command palette" autocomplete="off" />
+        <kbd class="shortcut-badge">ESC</kbd>
+      </div>
+      <div id="cmd-results" class="cmd-results" role="listbox" aria-label="Hasil Command"></div> 
+    </div>
+  </div>
+
+  <!-- Search Modal (mobile) -->
+  <div id="search-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Cari" style="display:none;">
+    <div class="modal modal-search">
+      <div class="search-modal-header">
+        <i data-lucide="search" aria-hidden="true"></i>
+        <input type="text" id="search-input" class="search-input" placeholder="Cari di halaman ini..." aria-label="Cari" autocomplete="off" />
+        <button class="icon-btn modal-close" data-modal="search-modal" aria-label="tutup pencarian">
+          <i data-lucide="x" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div id="search-results" class="search-results" role="list" aria-label="hasil Pencarian"></div>
+      <div class="search-nav-controls">
+        <span id="search-count" class="search-count" aria-live="polite"></span>
+        <div class="search-nav-btns">
+          <button id="search-prev-btn" class="btn btn-ghost btn-sm" aria-label="Previous result">
+            <i data-lucide="chevron-up" aria-hidden="true"></i>
+          </button>
+          <button id="search-next-btn" class="btn btn-ghost btn-sm" aria-label="Next result">
+            <i data-lucide="chevron-down" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page Create/Edit Modal -->
+  <div id="page-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="page-modal-title" style="display:none;">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <h2 id="page-modal-title" class="modal-title">Buat Halaman</h2>
+        <button class="icon-btn modal-close" data-modal="page-modal" aria-label="Tutup modal">
+          <i data-lucide="x" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="page-form" novalidate>
+          <input type="hidden" id="page-form-id" />
+          <div class="form-group">
+            <label for="page-form-title" class="form-label">Judul<span aria-hidden="true">*</span></label>
+            <input type="text" id="page-form-title" class="form-input" placeholder="Judul halaman" required />
+            <span id="page-title-error" class="form-error" role="alert"></span>
+          </div>
+          <div class="form-group">
+            <label for="page-form-category" class="form-label">kategori</label>
+            <select id="page-form-category" class="form-select">
+              <option value="">tanpa kategori</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="page-form-status" class="form-label">Status</label>
+              <select id="page-form-status" class="form-select">
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="page-form-visibility" class="form-label">Visibility</label>
+              <select id="page-form-visibility" class="form-select">
+                <option value="public">Public</option>
+                <option value="private">Private</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="page-form-description" class="form-label">Description</label>
+            <textarea id="page-form-description" class="form-textarea" rows="3" placeholder="description singkat..."></textarea>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-ghost modal-close" data-modal="page-modal">batal</button>
+            <button type="submit" id="page-form-submit" class="btn btn-primary">
+              <span id="page-form-btn-text">buat halaman</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category Create/Edit Modal -->
+  <div id="category-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="category-modal-title" style="display:none;">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h2 id="category-modal-title" class="modal-title">buat kategori</h2>
+        <button class="icon-btn modal-close" data-modal="category-modal" aria-label="Close modal">
+          <i data-lucide="x" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="category-form" novalidate>
+          <input type="hidden" id="category-form-id" />
+          <div class="form-group">
+            <label for="category-form-name" class="form-label">nama<span aria-hidden="true">*</span></label>
+            <input type="text" id="category-form-name" class="form-input" placeholder="Category name" required />
+            <span id="category-name-error" class="form-error" role="alert"></span>
+          </div>
+          <div class="form-group">
+            <label for="category-form-icon" class="form-label">Icon (lucide name)</label>
+            <input type="text" id="category-form-icon" class="form-input" placeholder="contoh: folder, code-2, book"/>
+          </div>
+          <div class="form-group">
+            <label for="category-form-color" class="form-label">warna</label>
+            <input type="color" id="category-form-color" class="form-color-input" value="#38bdf8" />
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-ghost modal-close" data-modal="category-modal">batal</button>
+            <button type="submit" id="category-form-submit" class="btn btn-primary">buat kategori</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Block Add/Edit Modal -->
+  <div id="block-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="block-modal-title" style="display:none;">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <h2 id="block-modal-title" class="modal-title">tambah block</h2>
+        <button class="icon-btn modal-close" data-modal="block-modal" aria-label="Close modal">
+          <i data-lucide="x" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="block-form" novalidate>
+          <input type="hidden" id="block-form-id" />
+          <input type="hidden" id="block-form-page-id" />
+          <div class="form-group">
+            <label for="block-form-type" class="form-label">tipe block</label>
+            <select id="block-form-type" class="form-select">
+              <option value="heading">judul</option>
+              <option value="text">Text</option>
+              <option value="code">Code</option>
+              <option value="quote">kutipan</option>
+              <option value="link">Link</option>
+              <option value="checklist">Checklist</option>
+              <option value="snippet_embed">sematkan Snippet</option>
+            </select>
+          </div>
+          <div id="block-form-fields" class="block-form-fields">
+            <!-- Dynamic fields rendered here -->
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-ghost modal-close" data-modal="block-modal">batal</button>
+            <button type="submit" id="block-form-submit" class="btn btn-primary">tambah block</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Snippet Modal -->
+  <div id="snippet-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="snippet-modal-title" style="display:none;">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <h2 id="snippet-modal-title" class="modal-title">buat Snippet</h2>
+        <button class="icon-btn modal-close" data-modal="snippet-modal" aria-label="Close modal">
+          <i data-lucide="x" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="snippet-form" novalidate>
+          <input type="hidden" id="snippet-form-id" />
+          <div class="form-group">
+            <label for="snippet-form-title" class="form-label">judul <span aria-hidden="true">*</span></label>
+            <input type="text" id="snippet-form-title" class="form-input" placeholder="Snippet title" required />
+            <span id="snippet-title-error" class="form-error" role="alert"></span>
+          </div>
+          <div class="form-group">
+            <label for="snippet-form-language" class="form-label">Bahasa</label>
+            <select id="snippet-form-language" class="form-select">
+              <option value="javascript">JavaScript</option>
+              <option value="html">HTML</option>
+              <option value="css">CSS</option>
+              <option value="sql">SQL</option>
+              <option value="json">JSON</option>
+              <option value="bash">Bash</option>
+              <option value="python">Python</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="snippet-form-category" class="form-label">kategori</label>
+            <select id="snippet-form-category" class="form-select">
+              <option value="">tanpa kategori</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="snippet-form-description" class="form-label">Deskripsi</label>
+            <input type="text" id="snippet-form-description" class="form-input" placeholder="deskripsi singkat" />
+          </div>
+          <div class="form-group">
+            <label for="snippet-form-code" class="form-label">Code <span aria-hidden="true">*</span></label>
+            <textarea id="snippet-form-code" class="form-textarea code-textarea" rows="10" placeholder="// tulis kode di sini" required></textarea>
+            <span id="snippet-code-error" class="form-error" role="alert"></span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Visibility</label>
+            <label class="toggle-label">
+              <input type="checkbox" id="snippet-form-public" class="toggle-input" />
+              <span class="toggle-track"></span>
+              <span>Public</span>
+            </label>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-ghost modal-close" data-modal="snippet-modal">batal</button>
+            <button type="submit" id="snippet-form-submit" class="btn btn-primary">buat Snippet</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirm Modal -->
+  <div id="confirm-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title" style="display:none;">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h2 id="confirm-modal-title" class="modal-title">konfirmasi</h2>
+        <button class="icon-btn modal-close" data-modal="confirm-modal" aria-label="Close modal">
+          <i data-lucide="x" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p id="confirm-modal-message" class="confirm-message"></p>
+        <div class="form-actions">
+          <button type="button" class="btn btn-ghost modal-close" data-modal="confirm-modal">bata;</button>
+          <button type="button" id="confirm-modal-ok" class="btn btn-danger">Confirm</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Center (Admin) -->
+  <div id="notification-center" class="notification-center" role="complementary" aria-label="Notifications" style="display:none;">
+    <div class="notif-header">
+      <span>Notifications</span>
+      <button id="notif-mark-all-read" class="btn btn-ghost btn-sm">tandai semua dibaca</button>
+    </div>
+    <div id="notif-list" class="notif-list" role="list"></div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="toast-container" role="region" aria-label="Notifications" aria-live="polite"></div>
+
+  <!-- Mobile Bottom Nav -->
+  <nav id="mobile-bottom-nav" class="mobile-bottom-nav" aria-label="Mobile navigation">
+    <a href="#/dashboard" class="mobile-nav-item" data-route="/dashboard" aria-label="Dashboard">
+      <i data-lucide="layout-dashboard" aria-hidden="true"></i>
+      <span>Beranda</span>
+    </a>
+    <a href="#/snippets" class="mobile-nav-item" data-route="/snippets" aria-label="Snippets">
+      <i data-lucide="code-2" aria-hidden="true"></i>
+      <span>Snippet</span>
+    </a>
+    <a href="#/categories" class="mobile-nav-item" data-route="/categories" aria-label="Categories">
+      <i data-lucide="folder" aria-hidden="true"></i>
+      <span>kategori</span>
+    </a>
+    <a href="#/settings" class="mobile-nav-item" data-route="/settings" aria-label="Settings">
+      <i data-lucide="settings" aria-hidden="true"></i>
+      <span>Pengaturan</span>
+    </a>
+  </nav>
+
+  <!-- Save Loading Overlay -->
+  <div id="save-overlay" class="save-overlay" aria-live="assertive" style="display:none;">
+    <div class="save-overlay-inner">
+      <div class="loading-spinner" aria-hidden="true"></div>
+      <span>menyimpan...</span>
+    </div>
+  </div>
+
+  <!-- Supabase Client -->
+  <script src="supabase.js"></script>
+
+  <!-- JS Modules - ORDER MATTERS -->
+  <script src="js/utils.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/supabase-api.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script src="js/toc.js"></script>
+  <script src="js/search.js"></script>
+  <script src="js/blocks.js"></script>
+  <script src="js/snippets.js"></script>
+  <script src="js/pages.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/export-json.js"></script>
+  <script src="js/shortcuts.js"></script>
+  <script src="js/router.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

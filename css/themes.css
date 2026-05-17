@@ -1,0 +1,168 @@
+/* ============================================================
+   DevVault - Theme System
+   themes.css
+   ============================================================ */
+
+/* ─── Dark Theme (Default) ─── */
+[data-theme="dark"] {
+  --color-bg: #0b1120;
+  --color-sidebar: #111827;
+  --color-card: #1e293b;
+  --color-card-hover: #253347;
+  --color-border: #334155;
+  --color-border-light: #1e293b;
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+  --color-accent: #38bdf8;
+  --color-accent-hover: #0ea5e9;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-danger: #dc2626;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
+  --shadow-xl: 0 16px 48px rgba(0,0,0,0.6);
+}
+
+/* ─── Light Theme ─── */
+[data-theme="light"] {
+  --color-bg: #f8fafc;
+  --color-sidebar: #f1f5f9;
+  --color-card: #ffffff;
+  --color-card-hover: #f8fafc;
+  --color-border: #e2e8f0;
+  --color-border-light: #f1f5f9;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94a3b8;
+  --color-accent: #0284c7;
+  --color-accent-hover: #0369a1;
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-error: #dc2626;
+  --color-danger: #b91c1c;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.1);
+  --shadow-xl: 0 16px 48px rgba(0,0,0,0.12);
+}
+
+[data-theme="light"] body {
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+}
+
+[data-theme="light"] .sidebar {
+  background: var(--color-sidebar);
+  border-right-color: var(--color-border);
+}
+
+[data-theme="light"] .topbar {
+  background: var(--color-sidebar);
+  border-bottom-color: var(--color-border);
+}
+
+[data-theme="light"] .user-badge {
+  background: var(--color-bg);
+  border-color: var(--color-border);
+}
+
+[data-theme="light"] .tab-item {
+  background: var(--color-bg);
+  border-color: var(--color-border);
+}
+
+[data-theme="light"] .tab-item.active {
+  background: var(--color-card);
+}
+
+[data-theme="light"] .form-input,
+[data-theme="light"] .form-select,
+[data-theme="light"] .form-textarea {
+  background: var(--color-bg);
+  border-color: var(--color-border);
+  color: var(--color-text-primary);
+}
+
+[data-theme="light"] .code-block-wrapper {
+  background: #1e293b;
+}
+
+[data-theme="light"] .code-block-toolbar {
+  background: rgba(0,0,0,0.1);
+  border-bottom-color: rgba(255,255,255,0.1);
+}
+
+[data-theme="light"] .modal-overlay {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="light"] .modal {
+  background: var(--color-card);
+  border-color: var(--color-border);
+}
+
+[data-theme="light"] .toast {
+  background: var(--color-card);
+  border-color: var(--color-border);
+  box-shadow: var(--shadow-lg);
+}
+
+[data-theme="light"] .notification-center {
+  background: var(--color-card);
+  border-color: var(--color-border);
+}
+
+[data-theme="light"] .sidebar-search-trigger {
+  background: var(--color-bg);
+  border-color: var(--color-border);
+}
+
+[data-theme="light"] .btn-primary {
+  color: #ffffff;
+}
+
+[data-theme="light"] .logo-icon {
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover));
+}
+
+/* ─── Reading Mode Overlay ─── */
+body.reading-mode .main-content {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+body.reading-mode .toc-panel {
+  opacity: 0.3;
+  pointer-events: none;
+  transition: opacity var(--transition-slow);
+}
+
+body.reading-mode .toc-panel:hover {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+body.reading-mode .topbar-center {
+  display: none;
+}
+
+body.reading-mode .page-view {
+  padding: var(--space-12) var(--space-8);
+}
+
+/* ─── Theme Transition ─── */
+body {
+  transition: background-color var(--transition-slow), color var(--transition-slow);
+}
+
+.sidebar,
+.topbar,
+.modal,
+.card,
+.toast,
+.notification-center {
+  transition: background-color var(--transition-slow), border-color var(--transition-slow);
+}

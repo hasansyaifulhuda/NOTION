@@ -1,0 +1,480 @@
+/* ============================================================
+   DevVault - Responsive Design
+   responsive.css
+   ============================================================ */
+
+/* ─── Breakpoints ─── */
+/* Mobile:  < 768px   */
+/* Tablet:  768-1024px */
+/* Desktop: > 1024px  */
+
+/* ─── Tablet ─── */
+@media (max-width: 1200px) {
+  :root {
+    --toc-width: 200px;
+  }
+}
+
+@media (max-width: 1100px) {
+  /* Hide TOC on smaller screens */
+  .toc-panel {
+    display: none;
+  }
+}
+
+/* ─── Tablet ─── */
+@media (max-width: 1024px) {
+  :root {
+    --sidebar-width: 240px;
+  }
+
+  .toc-panel {
+    display: none;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    transform: translateX(-100%);
+    z-index: var(--z-sidebar);
+    box-shadow: var(--shadow-xl);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-close {
+    display: flex;
+  }
+
+  .main-wrapper {
+    width: 100%;
+  }
+
+  .page-view {
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .breadcrumb {
+    max-width: 200px;
+    overflow: hidden;
+  }
+}
+
+/* ─── Mobile ─── */
+@media (max-width: 768px) {
+  :root {
+    --topbar-height: 52px;
+    --code-font-size: 0.8rem;
+  }
+
+  /* Mobile login button fix */
+.topbar-right .guest-only {
+  min-width: auto !important;
+  width: auto !important;
+
+  padding:
+    10px 14px !important;
+
+  margin-right: 10px;
+
+  border-radius: 14px;
+}
+
+/* Make icon + text tighter */
+.topbar-right .guest-only span {
+  font-size: 14px;
+}
+
+/* Reduce topbar spacing */
+.topbar-right {
+  gap: 6px;
+}
+
+  /* Hide reading mode button on mobile */
+#reading-mode-btn {
+  display: none !important;
+}
+
+  /* Sidebar - Full drawer */
+  .sidebar {
+    width: 280px;
+    transform: translateX(-100%);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  /* Topbar */
+  .topbar {
+    padding: 0 var(--space-3);
+    gap: var(--space-2);
+  }
+
+  .topbar-center {
+    display: none;
+  }
+
+  /* Hide some topbar items */
+  .breadcrumb {
+    max-width: 120px;
+  }
+
+  /* Login btn text */
+  /* Hide text only for icon-only buttons */
+.topbar-right .icon-btn span {
+  display: none;
+}
+/* Keep login button text visible on mobile */
+.topbar-right .guest-only span {
+  display: inline !important;
+}
+
+.topbar-right .guest-only {
+  min-width: auto !important;
+  width: auto !important;
+
+  padding:
+    10px 14px !important;
+
+  margin-right: 18px;
+
+  border-radius: 14px;
+}
+
+  .topbar-right .btn {
+    padding: var(--space-1);
+    width: 32px;
+  }
+
+  /* Show mobile only elements */
+  .mobile-only {
+    display: flex;
+  }
+
+  /* Mobile bottom nav */
+  .mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: var(--color-sidebar);
+    border-top: 1px solid var(--color-border);
+    z-index: var(--z-sticky);
+    align-items: stretch;
+    justify-content: space-around;
+  }
+
+  .mobile-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    color: var(--color-text-muted);
+    text-decoration: none;
+    font-size: 10px;
+    transition: color var(--transition-fast), background var(--transition-fast);
+    padding: var(--space-1);
+    cursor: pointer;
+  }
+
+  .mobile-nav-item:hover,
+  .mobile-nav-item.active {
+    color: var(--color-accent);
+    background: rgba(56, 189, 248, 0.08);
+  }
+
+  .mobile-nav-item svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* Add bottom padding to main content for mobile nav */
+  .main-content {
+    padding-bottom: calc(60px + var(--space-8));
+  }
+
+  /* Page views */
+  .page-view {
+    padding: var(--space-4) var(--space-4);
+    max-width: 100%;
+  }
+
+  .page-wide {
+    padding: var(--space-4) var(--space-4);
+    max-width: 100%;
+  }
+
+  .page-full {
+    padding: var(--space-4);
+  }
+
+  /* Dashboard stats */
+  .dashboard-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-3);
+  }
+
+  /* Card grid */
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Section header */
+  .section-header {
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .section-title {
+    font-size: var(--text-xl);
+  }
+
+  /* Page header */
+  .page-header-title {
+    font-size: var(--text-2xl);
+  }
+
+  /* Form rows */
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  /* Modals */
+  .modal-overlay {
+    padding: var(--space-3);
+    align-items: flex-end;
+  }
+
+  .modal {
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    max-height: 85vh;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .modal-cmd {
+    align-self: flex-start;
+    margin-top: 0;
+    border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+  }
+
+  /* Command palette on mobile */
+  .modal-overlay:has(.modal-cmd) {
+    align-items: flex-start;
+  }
+
+  .modal-search {
+    align-self: flex-start;
+    margin-top: 0;
+    border-radius: 0;
+    max-width: 100%;
+  }
+
+  /* Toast */
+  .toast-container {
+    bottom: 70px;
+    left: var(--space-3);
+    right: var(--space-3);
+    max-width: 100%;
+    width: auto;
+  }
+
+  /* Code blocks */
+  .code-block-wrapper {
+    border-radius: var(--radius-md);
+    margin: var(--space-3) -var(--space-1);
+  }
+
+  .code-block-body pre {
+    font-size: 0.78rem !important;
+  }
+
+  .code-block-toolbar {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  /* Block actions - always visible on mobile */
+  .block-actions {
+    opacity: 1;
+    position: relative;
+    right: auto;
+    top: auto;
+    justify-content: flex-end;
+    margin-top: var(--space-2);
+  }
+
+  /* Notification center */
+  .notification-center {
+    left: var(--space-3);
+    right: var(--space-3);
+    width: auto;
+  }
+
+  /* Reading mode */
+  body.reading-mode .page-view {
+    padding: var(--space-4);
+  }
+
+  /* Snippet embed */
+  .snippet-card-header {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  /* TOC */
+  .toc-panel {
+    display: none;
+  }
+
+  /* Settings */
+  .settings-row {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  /* Sidebar page items */
+  .sidebar {
+    max-width: 90vw;
+  }
+
+  /* Fullscreen code block on mobile */
+  .code-block-wrapper.fullscreen {
+    z-index: calc(var(--z-modal) + 10);
+  }
+
+  .code-block-wrapper.fullscreen .code-block-body {
+    height: calc(100vh - 44px);
+    font-size: 0.75rem;
+  }
+}
+
+/* ─── Very Small Mobile ─── */
+@media (max-width: 380px) {
+  .dashboard-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .page-header-title {
+    font-size: var(--text-xl);
+  }
+
+  .section-title {
+    font-size: var(--text-lg);
+  }
+
+  .btn {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .topbar {
+    padding: 0 var(--space-2);
+  }
+}
+
+/* ─── Print styles ─── */
+@media print {
+  .sidebar,
+  .topbar,
+  .toc-panel,
+  .mobile-bottom-nav,
+  .toast-container,
+  .save-overlay,
+  .block-actions,
+  .page-header-actions,
+  .reading-progress {
+    display: none !important;
+  }
+
+  .main-wrapper {
+    width: 100%;
+  }
+
+  .page-view {
+    max-width: 100%;
+    padding: 20px;
+  }
+
+  body {
+    background: white;
+    color: black;
+  }
+
+  .code-block-wrapper {
+    border: 1px solid #ccc;
+    break-inside: avoid;
+  }
+}
+
+/* ─── Wide Desktop ─── */
+@media (min-width: 1400px) {
+  :root {
+    --content-max-width: 780px;
+    --content-wide-width: 1100px;
+  }
+}
+
+/* ─── Tablet Landscape ─── */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .topbar-center {
+    display: flex;
+  }
+
+  .tabs-container {
+    max-width: 300px;
+  }
+
+  .breadcrumb {
+    max-width: 150px;
+  }
+}
+
+/* ─── Reduced motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ─── High contrast ─── */
+@media (prefers-contrast: high) {
+  :root {
+    --color-border: #64748b;
+    --color-text-secondary: #cbd5e1;
+    --color-text-muted: #94a3b8;
+  }
+}
+/* ─────────────────────────────
+   Desktop Only
+   Hide mobile/tablet controls
+───────────────────────────── */
+@media (min-width: 1025px) {
+
+  /* Hide sidebar close button on desktop */
+  .sidebar-close {
+    display: none !important;
+  }
+
+  /* Hide hamburger button on desktop */
+  #sidebar-toggle,
+  .menu-toggle,
+  .hamburger-btn,
+  .topbar-toggle {
+    display: none !important;
+  }
+
+}

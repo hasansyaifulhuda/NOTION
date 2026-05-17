@@ -1,0 +1,14 @@
+DevVault - Custom Icons Directory
+
+This directory is reserved for custom icon assets.
+
+Usage:
+- Place custom SVG icons here if needed
+- Reference them in HTML/CSS using relative paths
+- DevVault primarily uses Lucide Icons via CDN
+
+Examples of what to place here:
+- favicon-16x16.png
+- favicon-32x32.png
+- apple-touch-icon.png
+- Custom logo variants
