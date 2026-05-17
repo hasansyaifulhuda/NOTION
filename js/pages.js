@@ -849,7 +849,7 @@ window.DevVaultPages = (function () {
     if (window.DevVaultModal) {
       window.DevVaultModal.confirm(
         'Move to Trash',
-        'This page will be moved to trash. You can restore it later from the Trash section.',
+        'Halaman ini akan dipindahkan ke tempat sampah. Anda dapat memulihkannya nanti dari bagian Sampah.',
         async () => {
           try {
             const { error } = await window.DevVaultAPI.softDeletePage(pageId);
