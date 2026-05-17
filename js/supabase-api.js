@@ -60,7 +60,7 @@ window.DevVaultAPI = (function () {
           status: 'published',
           visibility: 'public',
           pinned: true,
-          deleted: false,
+          deleted_at: null,
           order_index: 0,
           created_at: now,
           updated_at: now,
@@ -73,7 +73,7 @@ window.DevVaultAPI = (function () {
           status: 'published',
           visibility: 'public',
           pinned: false,
-          deleted: false,
+          deleted_at: null,
           order_index: 0,
           created_at: now,
           updated_at: now,
@@ -86,7 +86,7 @@ window.DevVaultAPI = (function () {
           status: 'draft',
           visibility: 'private',
           pinned: false,
-          deleted: false,
+          deleted_at: null,
           order_index: 1,
           created_at: now,
           updated_at: now,
@@ -106,9 +106,9 @@ window.DevVaultAPI = (function () {
         { id: generateId(), page_id: pageId2, type: 'code', content: { language: 'javascript', code: 'const numbers = [1, 2, 3, 4, 5];\n\n// Map - transform each element\nconst doubled = numbers.map(n => n * 2);\n// [2, 4, 6, 8, 10]\n\n// Filter - keep matching elements\nconst evens = numbers.filter(n => n % 2 === 0);\n// [2, 4]\n\n// Reduce - accumulate to single value\nconst sum = numbers.reduce((acc, n) => acc + n, 0);\n// 15' }, order_index: 5, created_at: now, updated_at: now },
       ],
       snippets: [
-        { id: generateId(), title: 'Fetch API with async/await', description: 'Modern HTTP request pattern', language: 'javascript', code: 'async function fetchData(url) {\n  try {\n    const response = await fetch(url);\n    if (!response.ok) {\n      throw new Error(`HTTP error! status: ${response.status}`);\n    }\n    const data = await response.json();\n    return data;\n  } catch (error) {\n    console.error("Fetch failed:", error);\n    throw error;\n  }\n}\n\n// Usage\nconst data = await fetchData("https://api.example.com/data");', category_id: catId2, is_public: true, deleted: false, created_at: now, updated_at: now },
-        { id: generateId(), title: 'CSS Flexbox Center', description: 'Center content using flexbox', language: 'css', code: '.centered {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  min-height: 100vh;\n}', category_id: catId1, is_public: true, deleted: false, created_at: now, updated_at: now },
-        { id: generateId(), title: 'SQL Select with Join', description: 'Basic SQL join example', language: 'sql', code: 'SELECT\n  u.id,\n  u.email,\n  p.title AS page_title,\n  p.created_at\nFROM users u\nINNER JOIN pages p ON p.user_id = u.id\nWHERE p.status = \'published\'\nORDER BY p.created_at DESC\nLIMIT 10;', category_id: null, is_public: true, deleted: false, created_at: now, updated_at: now },
+        { id: generateId(), title: 'Fetch API with async/await', description: 'Modern HTTP request pattern', language: 'javascript', code: 'async function fetchData(url) {\n  try {\n    const response = await fetch(url);\n    if (!response.ok) {\n      throw new Error(`HTTP error! status: ${response.status}`);\n    }\n    const data = await response.json();\n    return data;\n  } catch (error) {\n    console.error("Fetch failed:", error);\n    throw error;\n  }\n}\n\n// Usage\nconst data = await fetchData("https://api.example.com/data");', category_id: catId2, is_public: true, deleted_at: null, created_at: now, updated_at: now },
+        { id: generateId(), title: 'CSS Flexbox Center', description: 'Center content using flexbox', language: 'css', code: '.centered {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  min-height: 100vh;\n}', category_id: catId1, is_public: true, deleted_at: null, created_at: now, updated_at: now },
+        { id: generateId(), title: 'SQL Select with Join', description: 'Basic SQL join example', language: 'sql', code: 'SELECT\n  u.id,\n  u.email,\n  p.title AS page_title,\n  p.created_at\nFROM users u\nINNER JOIN pages p ON p.user_id = u.id\nWHERE p.status = \'published\'\nORDER BY p.created_at DESC\nLIMIT 10;', category_id: null, is_public: true, deleted_at: null, created_at: now, updated_at: now },
       ],
       notifications: [],
       activity_logs: [],
@@ -146,6 +146,7 @@ window.DevVaultAPI = (function () {
       order_index: payload.order_index ?? 0,
       created_at: now,
       updated_at: now,
+      slug: payload.slug || payload.name.toLowerCase().replace(/\s+/g, '-'),
     };
 
     if (isAvailable()) {
@@ -154,7 +155,7 @@ window.DevVaultAPI = (function () {
           .from('categories')
           .insert([newCat])
           .select()
-          .single();
+          .maybeSingle();
         if (error) throw error;
         return { data, error: null };
       } catch (err) {
@@ -179,7 +180,7 @@ window.DevVaultAPI = (function () {
           .update(updated)
           .eq('id', id)
           .select()
-          .single();
+          .maybeSingle();
         if (error) throw error;
         return { data, error: null };
       } catch (err) {
@@ -199,26 +200,55 @@ window.DevVaultAPI = (function () {
   }
 
   async function deleteCategory(id) {
-    if (isAvailable()) {
-      try {
-        const { error } = await getClient()
-          .from('categories')
-          .delete()
-          .eq('id', id);
-        if (error) throw error;
-        return { error: null };
-      } catch (err) {
-        console.error('[API] deleteCategory error:', err);
-        return { error: err };
-      }
+  if (isAvailable()) {
+    try {
+
+      await getClient()
+        .from('pages')
+        .update({ category_id: null })
+        .eq('category_id', id);
+
+      await getClient()
+        .from('snippets')
+        .update({ category_id: null })
+        .eq('category_id', id);
+
+      const { error } = await getClient()
+        .from('categories')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      return { error: null };
+
+    } catch (err) {
+      console.error('[API] deleteCategory error:', err);
+      return { error: err };
     }
-    // Demo mode
-    const demo = getDemoData();
-    demo.categories = demo.categories.filter(c => c.id !== id);
-    saveDemoData(demo);
-    return { error: null };
   }
 
+  // Demo mode
+  const demo = getDemoData();
+
+  demo.pages = demo.pages.map(p =>
+    p.category_id === id
+      ? { ...p, category_id: null }
+      : p
+  );
+
+  demo.snippets = demo.snippets.map(s =>
+    s.category_id === id
+      ? { ...s, category_id: null }
+      : s
+  );
+
+  demo.categories = demo.categories.filter(c => c.id !== id);
+
+  saveDemoData(demo);
+
+  return { error: null };
+}
   /* ─── Pages API ─── */
 
   async function getPages(includePrivate = false) {
@@ -238,9 +268,9 @@ window.DevVaultAPI = (function () {
         if (error) throw error;
         return { data: data || [], error: null };
       } catch (err) {
-        console.error('[API] getPages error:', err);
-        return { data: [], error: err };
-      }
+  console.error('[API] getPages error:', err);
+  return { data: [], error: err };
+}
     }
     // Demo mode
     const demo = getDemoData();
@@ -264,7 +294,7 @@ window.DevVaultAPI = (function () {
           .select('*, categories(id,name,icon,color)')
           .eq('id', id)
           .is('deleted_at', null)
-          .single();
+          .maybeSingle();
         if (error) throw error;
         return { data, error: null };
       } catch (err) {
@@ -285,6 +315,7 @@ window.DevVaultAPI = (function () {
     const newPage = {
       id: generateId(),
       title: payload.title,
+      slug: payload.slug || payload.title.toLowerCase().replace(/\s+/g, '-'),
       description: payload.description || '',
       category_id: payload.category_id || null,
       status: payload.status || 'draft',
@@ -302,7 +333,7 @@ window.DevVaultAPI = (function () {
           .from('pages')
           .insert([newPage])
           .select()
-          .single();
+          .maybeSingle();
         if (error) throw error;
         return { data, error: null };
       } catch (err) {
@@ -327,7 +358,7 @@ window.DevVaultAPI = (function () {
           .update(updated)
           .eq('id', id)
           .select()
-          .single();
+          .maybeSingle();
         if (error) throw error;
         return { data, error: null };
       } catch (err) {
@@ -442,7 +473,7 @@ window.DevVaultAPI = (function () {
           .from('page_blocks')
           .insert([newBlock])
           .select()
-          .single();
+          .maybeSingle();
         if (error) throw error;
         return { data, error: null };
       } catch (err) {
@@ -467,7 +498,7 @@ window.DevVaultAPI = (function () {
           .update(updated)
           .eq('id', id)
           .select()
-          .single();
+          .maybeSingle();
         if (error) throw error;
         return { data, error: null };
       } catch (err) {
@@ -582,7 +613,7 @@ window.DevVaultAPI = (function () {
           .from('snippets')
           .insert([newSnippet])
           .select()
-          .single();
+          .maybeSingle();
         if (error) throw error;
         return { data, error: null };
       } catch (err) {
@@ -607,7 +638,7 @@ window.DevVaultAPI = (function () {
           .update(updated)
           .eq('id', id)
           .select()
-          .single();
+          .maybeSingle();
         if (error) throw error;
         return { data, error: null };
       } catch (err) {
@@ -637,8 +668,9 @@ window.DevVaultAPI = (function () {
         if (error) throw error;
         return { error: null };
       } catch (err) {
-        return { error: err };
-      }
+  console.error('[API] permanentDeleteSnippet error:', err);
+  return { error: err };
+}
     }
     const demo = getDemoData();
     demo.snippets = demo.snippets.filter(s => s.id !== id);

@@ -35,6 +35,9 @@ window.DevVaultSidebar = (function () {
     if (sidebar) addClass(sidebar, 'open');
     if (overlay) addClass(overlay, 'active');
     if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'true');
+
+    document.body.classList.add('sidebar-open');
+
     isOpen = true;
     lsSet('sidebar_open', true);
   }
@@ -47,6 +50,9 @@ window.DevVaultSidebar = (function () {
     if (sidebar) removeClass(sidebar, 'open');
     if (overlay) removeClass(overlay, 'active');
     if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
+
+    document.body.classList.remove('sidebar-open');
+    
     isOpen = false;
     lsSet('sidebar_open', false);
   }

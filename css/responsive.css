@@ -101,9 +101,25 @@
 
   /* Sidebar - Full drawer */
   .sidebar {
-    width: 280px;
-    transform: translateX(-100%);
-  }
+  width: 280px;
+
+  max-width: 85vw;
+
+  transform: translateX(-100%);
+
+  position: fixed;
+  top: 0;
+  left: 0;
+
+  height: 100dvh;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  overscroll-behavior: contain;
+
+  -webkit-overflow-scrolling: touch;
+}
 
   .sidebar.open {
     transform: translateX(0);
@@ -477,4 +493,36 @@
     display: none !important;
   }
 
+}
+/* =========================================
+   MOBILE SIDEBAR FIX
+========================================= */
+
+@media (max-width: 768px) {
+
+  html,
+  body {
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  body.sidebar-open {
+    overflow: hidden;
+    touch-action: none;
+  }
+
+  .app-shell {
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  .main-wrapper {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .sidebar-overlay {
+    width: 100vw;
+    height: 100dvh;
+  }
 }
