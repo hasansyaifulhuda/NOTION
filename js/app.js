@@ -173,7 +173,6 @@
     setTimeout(() => {
       if (!document.querySelector('#main-content')?.children?.length ||
           document.querySelector('#main-content')?.querySelector('.loading-overlay')) {
-        console.warn('[DevVault] Supabase ready timeout - initializing anyway');
         onSupabaseReady();
       }
     }, 5000);
