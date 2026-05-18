@@ -355,10 +355,27 @@ window.DevVaultPages = (function () {
       if (window.lucide) window.lucide.createIcons({ nodes: [container] });
 
       // Render blocks
-      const blocksContainer = qs('#blocks-container');
-      if (blocksContainer && window.DevVaultBlocks) {
-        window.DevVaultBlocks.renderBlocks(blocks, pageId, blocksContainer);
-      }
+      // Render blocks
+const blocksContainer = qs('#blocks-container');
+
+if (blocksContainer && window.DevVaultBlocks) {
+
+  window.DevVaultBlocks.renderBlocks(
+    blocks,
+    pageId,
+    blocksContainer
+  );
+
+  if (window.DevVaultSearch) {
+
+    window.DevVaultSearch.buildIndex(
+      blocks,
+      page
+    );
+
+  }
+
+}
 
       // Bind admin page actions
       if (isAdmin) {

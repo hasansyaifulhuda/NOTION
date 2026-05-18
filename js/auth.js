@@ -261,7 +261,6 @@ window.DevVaultAuth = (function () {
 
       if (session?.user) {
         currentUser = session.user;
-        console.log('[Auth] Session restored for:', currentUser.email);
         syncAuthUI(currentUser);
         dispatchAuthChange(currentUser);
         return currentUser;

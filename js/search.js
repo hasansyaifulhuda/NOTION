@@ -20,92 +20,92 @@ window.DevVaultSearch = (function () {
 
   /* ─── Build Search Index from blocks ─── */
 
-  function buildIndex(blocks, page) {
-    searchIndex = [];
+  function buildIndex(blocks, page)
+{
+  searchIndex = [];
+  
+  if (!blocks || !blocks.length)
+    return;
 
-    if (!blocks || !blocks.length) return;
+  const processBlock = (block) =>
+  {
+    if (!block)
+      return;
 
-    blocks.forEach(block => {
-      if (!block.content) return;
+    let textContent = '';
 
-      switch (block.type) {
-        case 'heading': {
-          const text = block.content.text || '';
-          if (text) {
-            searchIndex.push({
-              blockId: block.id,
-              type: 'Heading',
-              text,
-              level: block.content.level || 1,
-            });
-          }
-          break;
-        }
-        case 'text': {
-          const text = block.content.text || '';
-          if (text) {
-            searchIndex.push({
-              blockId: block.id,
-              type: 'Text',
-              text,
-            });
-          }
-          break;
-        }
-        case 'code': {
-          const code = block.content.code || '';
-          const lang = block.content.language || 'code';
-          if (code) {
-            searchIndex.push({
-              blockId: block.id,
-              type: `Code (${lang})`,
-              text: code,
-            });
-          }
-          break;
-        }
-        case 'quote': {
-          const text = block.content.text || '';
-          if (text) {
-            searchIndex.push({
-              blockId: block.id,
-              type: 'Quote',
-              text,
-            });
-          }
-          break;
-        }
-        case 'checklist': {
-          const items = block.content.items || [];
-          items.forEach((item, i) => {
-            if (item) {
-              searchIndex.push({
-                blockId: block.id,
-                type: 'Checklist',
-                text: item,
-                itemIndex: i,
-              });
-            }
-          });
-          break;
-        }
-        case 'link': {
-          const text = block.content.text || block.content.url || '';
-          if (text) {
-            searchIndex.push({
-              blockId: block.id,
-              type: 'Link',
-              text,
-            });
-          }
-          break;
-        }
-        default:
-          break;
-      }
-    });
-  }
+    const content =
+      block.content || {};
 
+   const extractText = (obj) =>
+{
+  let result = '';
+
+  const walk = (value) =>
+  {
+    if (!value)
+      return;
+
+    if (
+      typeof value === 'string'
+    )
+    {
+      result += ' ' + value;
+    }
+    else if (
+      Array.isArray(value)
+    )
+    {
+      value.forEach(walk);
+    }
+    else if (
+      typeof value === 'object'
+    )
+    {
+      Object.values(value)
+        .forEach(walk);
+    }
+  };
+
+  walk(obj);
+
+  return result.trim();
+};
+
+textContent =
+  extractText(content);
+
+    if (
+      textContent &&
+      textContent.trim()
+    )
+    {
+      searchIndex.push({
+        pageId: page.id,
+        pageTitle: page.title,
+        blockId: block.id,
+        type: block.type || 'Block',
+        text: textContent
+      });
+    }
+
+    // CHILD BLOCKS
+    if (
+      Array.isArray(
+        block.children
+      )
+    )
+    {
+      block.children.forEach(
+        processBlock
+      );
+    }
+  };
+
+  blocks.forEach(
+    processBlock
+  );
+}
   /* ─── Perform Search ─── */
 
   function performSearch(query) {
@@ -129,7 +129,6 @@ window.DevVaultSearch = (function () {
 
     if (currentResults.length > 0) {
       currentResultIndex = 0;
-      scrollToResult(currentResults[0]);
     }
   }
 
@@ -153,8 +152,17 @@ window.DevVaultSearch = (function () {
         <div class="search-result-item" data-result-index="${index}" data-block-id="${item.blockId}"
           role="listitem" tabindex="0"
           aria-label="${sanitize(item.type)}: ${sanitize(item.text.slice(0, 50))}">
-          <div class="result-type">${sanitize(item.type)}</div>
-          <div class="result-text">${highlighted}</div>
+         <div class="result-type">
+  ${sanitize(item.type)}
+</div>
+
+<div class="result-page">
+  ${sanitize(item.pageTitle)}
+</div>
+
+<div class="result-text">
+  ${highlighted}
+</div>
         </div>
       `;
     }).join('');
@@ -188,33 +196,88 @@ window.DevVaultSearch = (function () {
       });
     }
 
-    scrollToResult(currentResults[index]);
+    openSearchResult(currentResults[index]);
     updateCount();
   }
 
-  function scrollToResult(result) {
-    if (!result) return;
-
-    // Find block element in page content
-    const blockEl = qs(`[data-block-id="${result.blockId}"]`);
-    if (blockEl) {
-      const mainContent = qs('#main-content');
-      if (mainContent) {
-        const topbarHeight = 56;
-        const offsetTop = blockEl.offsetTop - topbarHeight - 16;
-        mainContent.scrollTo({ top: offsetTop, behavior: 'smooth' });
-      }
-
-      // Highlight the block temporarily
-      blockEl.style.transition = 'background 0.3s ease';
-      blockEl.style.background = 'rgba(56, 189, 248, 0.08)';
-      blockEl.style.borderRadius = '6px';
-      setTimeout(() => {
-        blockEl.style.background = '';
-        blockEl.style.borderRadius = '';
-      }, 2000);
-    }
+  async function openSearchResult(result)
+{
+  // SAFETY CHECK
+  if (
+    !result ||
+    !result.pageId ||
+    !result.blockId
+  ) {
+    console.error(
+      'Invalid search result:',
+      result
+    );
+    return;
   }
+
+  closeSearch();
+
+  const targetHash =
+    `#/${result.pageId}`;
+
+  if (
+    window.location.hash !== targetHash
+  )
+  {
+    window.location.hash =
+      targetHash;
+  }
+
+  let attempts = 0;
+
+const tryScroll = () =>
+{
+  const blockEl =
+    document.getElementById(
+      `block-${result.blockId}`
+    );
+
+  if (!blockEl)
+  {
+    attempts++;
+
+    if (attempts < 10)
+    {
+      requestAnimationFrame(
+        tryScroll
+      );
+    }
+    else
+    {
+      console.warn(
+        'Block element not found:',
+        result.blockId
+      );
+    }
+
+    return;
+  }
+
+  blockEl.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start'
+  });
+
+  blockEl.classList.add(
+    'search-highlight'
+  );
+
+  setTimeout(() =>
+  {
+    blockEl.classList.remove(
+      'search-highlight'
+    );
+  }, 2500);
+};
+
+tryScroll();
+}
+
 
   /* ─── Navigation ─── */
 

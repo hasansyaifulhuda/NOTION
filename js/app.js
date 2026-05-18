@@ -10,7 +10,6 @@
   /* ─── Application Bootstrap ─── */
 
   async function initApp() {
-    console.log('[DevVault] Initializing application...');
 
     try {
       // 1. Initialize settings (theme, etc.) - must be first to avoid flash
@@ -67,8 +66,6 @@
 
       // 11. Initialize Supabase auth state listener (if available)
       setupSupabaseAuthListener();
-
-      console.log('[DevVault] Application initialized successfully.');
 
     } catch (err) {
       console.error('[DevVault] Critical initialization error:', err);

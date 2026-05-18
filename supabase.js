@@ -45,7 +45,6 @@
               detectSessionInUrl: false,
             },
           });
-          console.log('[DevVault] Supabase client initialized successfully.');
           // Dispatch event so app.js can proceed
           document.dispatchEvent(new CustomEvent('supabase:ready'));
         } catch (err) {

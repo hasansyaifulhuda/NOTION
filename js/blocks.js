@@ -227,11 +227,6 @@ window.DevVaultBlocks = (function () {
     // Bind block interactions
     bindBlockEvents(container, isAdmin);
 
-    // Build search index
-    if (window.DevVaultSearch) {
-      window.DevVaultSearch.buildIndex(blocks);
-    }
-
     // Build TOC
     if (window.DevVaultTOC) {
       window.DevVaultTOC.buildTOC(container);
@@ -260,7 +255,13 @@ window.DevVaultBlocks = (function () {
     ` : '';
 
     return `
-      <div class="block-container" data-block-id="${blockId}" data-block-type="${block.type}" draggable="${isAdmin}">
+  <div
+    id="block-${blockId}"
+    class="block-container"
+    data-block-id="${blockId}"
+    data-block-type="${block.type}"
+    draggable="${isAdmin}"
+  >
         ${blockInner}
         ${adminActions}
       </div>
