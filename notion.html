@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Materi Pembelajaran - Notion Style</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        notion: {
+                            bg: '#191919',
+                            text: '#dbdbdb',
+                            border: '#2f2f2d',
+                            hover: '#262624',
+                            primary: '#eab308'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Prism.js Syntax Highlighting Theme & Core -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+
+    <!-- Supabase JS Client SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap');
+        
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #191919;
+            color: #dbdbdb;
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #3f3f3f; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .animate-fade-in {
+            animation: fadeIn 0.2s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Custom VS Code Dark Theme Overrides for Prism Syntax Highlighting */
+        code[class*="language-"], pre[class*="language-"] {
+            font-family: 'Fira Code', monospace !important;
+            background: #121212 !important;
+            color: #d4d4d4 !important;
+            text-shadow: none !important;
+            font-size: 0.875rem !important;
+            line-height: 1.6 !important;
+            white-space: pre-wrap !important;
+            word-break: break-word !important;
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+            touch-action: pan-x pan-y !important;
+        }
+
+        .token.comment, .token.prolog, .token.doctype, .token.cdata {
+            color: #6A9955 !important;
+            font-style: italic;
+        }
+        .token.punctuation {
+            color: #d4d4d4 !important;
+        }
+        .token.property, .token.tag, .token.boolean, .token.number, .token.constant, .token.symbol, .token.deleted {
+            color: #b5cea8 !important;
+        }
+        .token.selector, .token.attr-name, .token.string, .token.char, .token.builtin, .token.inserted {
+            color: #ce9178 !important;
+        }
+        .token.operator, .token.entity, .token.url, .language-css .token.string, .style .token.string {
+            color: #d4d4d4 !important;
+        }
+        .token.atrule, .token.attr-value, .token.keyword {
+            color: #569cd6 !important;
+        }
+        .token.function, .token.class-name {
+            color: #DCDCAA !important;
+        }
+        .token.regex, .token.important, .token.variable {
+            color: #d16969 !important;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <!-- HEADER / NAVIGATION BAR -->
+    <header class="flex justify-between items-center h-12 px-4 md:px-6 border-b border-notion-border shrink-0 select-none bg-notion-bg z-30">
+        <div class="overflow-x-auto no-scrollbar whitespace-nowrap max-w-[70vw] md:max-w-none flex items-center py-1">
+            <div id="breadcrumb" class="flex items-center gap-2 text-sm text-neutral-400">
+                <!-- Breadcrumb diisi dinamis via JS -->
+            </div>
+        </div>
+        <div class="flex items-center shrink-0 ml-2 gap-2">
+            <div id="loading-indicator" class="hidden text-xs text-yellow-400 flex items-center gap-1">
+                <span class="animate-spin">⏳</span> Sync...
+            </div>
+            <button id="auth-btn" class="text-sm font-medium text-neutral-300 hover:text-white transition-colors bg-neutral-800/60 hover:bg-neutral-800 px-3 py-1.5 rounded-md border border-neutral-700/50">Login</button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="flex-1 overflow-y-auto flex flex-col items-center pt-4 pb-32 relative">
+        
+        <!-- FOLDER VIEW (TABLE) -->
+        <div id="folder-view" class="w-full max-w-4xl px-4 md:px-8 flex flex-col group animate-fade-in">
+            
+            <!-- Global Search & Actions Bar -->
+            <div class="flex items-center justify-between mb-4 relative gap-3">
+                <div id="search-wrapper" class="flex-1">
+                    <!-- Search Trigger Button -->
+                    <button id="search-toggle-btn" class="flex items-center gap-2 text-sm text-neutral-400 hover:text-white bg-neutral-900/60 hover:bg-neutral-800 px-3.5 py-2 rounded-lg border border-neutral-800 transition-colors shadow-sm">
+                        <span>🔍</span>
+                        <span>Cari materi atau folder...</span>
+                    </button>
+                    <!-- Expanded Search Input Box -->
+                    <div id="search-input-box" class="hidden relative w-full animate-fade-in">
+                        <span class="absolute left-3 top-2.5 text-neutral-400 text-sm">🔍</span>
+                        <input type="text" id="global-search-input" placeholder="Ketik untuk mencari judul (contoh: pyt)..." class="w-full pl-9 pr-10 py-2 bg-neutral-900 border border-neutral-700 rounded-lg text-white text-sm focus:outline-none focus:border-neutral-500 shadow-inner">
+                        <button id="close-search-btn" class="absolute right-3 top-2.5 text-neutral-400 hover:text-white text-xs px-1.5 py-0.5 rounded bg-neutral-800">✕</button>
+                        <!-- Suggestions Dropdown -->
+                        <div id="search-suggestions" class="hidden absolute left-0 right-0 mt-2 bg-[#202020] border border-notion-border rounded-lg shadow-2xl max-h-60 overflow-y-auto z-50 animate-fade-in"></div>
+                    </div>
+                </div>
+                <div class="shrink-0">
+                    <button id="add-item-btn" class="hidden text-sm hover:bg-neutral-800 text-neutral-300 px-3.5 py-2 rounded-lg transition-colors flex items-center gap-1.5 font-medium border border-neutral-700/50">
+                        + Baru
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Items Table -->
+            <div class="w-full">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-notion-border text-neutral-400 text-xs sm:text-sm">
+                            <th class="py-3 font-normal">Judul</th>
+                            <th class="py-3 font-normal text-right sm:w-48 whitespace-nowrap">terakhir di update</th>
+                            <th class="py-3 font-normal w-20 admin-col hidden text-right">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <!-- Data item dimuat secara dinamis dari JS / Supabase -->
+                    </tbody>
+                </table>
+                <div id="empty-state" class="hidden flex flex-col items-center justify-center py-16 text-neutral-500 text-sm">
+                    <span class="text-3xl mb-3">🍃</span>
+                    Tidak ada materi di sini.
+                </div>
+            </div>
+        </div>
+
+        <!-- DOCUMENT VIEW (PAGE EDITOR / READER) -->
+        <div id="document-view" class="hidden w-full max-w-3xl px-4 sm:px-6 md:px-8 flex flex-col pb-32 pt-4 relative animate-fade-in mx-auto">
+            
+            <!-- ADMIN BLOCK ADDITION FLOATING MENU BUTTON -->
+            <div id="block-menu-container" class="hidden absolute top-4 right-4 sm:right-6 z-40">
+                <div class="relative">
+                    <button id="toggle-block-menu" class="bg-neutral-800 hover:bg-neutral-700 text-white px-3 py-1.5 rounded-md text-xs font-medium border border-neutral-700 shadow flex items-center gap-1.5 transition-colors">
+                        <span>➕ Tambah Blok</span>
+                    </button>
+                    <!-- Dropdown Menu Pilihan Blok -->
+                    <div id="block-dropdown" class="hidden absolute right-0 mt-2 w-60 bg-[#202020] border border-notion-border rounded-lg shadow-2xl py-1.5 z-50 animate-fade-in">
+                        <div class="px-3 py-1 text-[10px] uppercase tracking-wider text-neutral-500 font-semibold">Pilih Blok Konten</div>
+                        <button onclick="addBlock('heading')" class="w-full text-left px-3 py-2 text-xs text-neutral-300 hover:bg-neutral-800 flex items-center gap-2 transition-colors">
+                            <span>📌</span> Judul (Heading)
+                        </button>
+                        <button onclick="addBlock('paragraph')" class="w-full text-left px-3 py-2 text-xs text-neutral-300 hover:bg-neutral-800 flex items-center gap-2 transition-colors">
+                            <span>📝</span> Teks Biasa (Paragraph)
+                        </button>
+                        <button onclick="addBlock('callout')" class="w-full text-left px-3 py-2 text-xs text-neutral-300 hover:bg-neutral-800 flex items-center gap-2 transition-colors">
+                            <span>💡</span> Penjelasan (Callout Multi-Warna)
+                        </button>
+                        <button onclick="addBlock('code')" class="w-full text-left px-3 py-2 text-xs text-neutral-300 hover:bg-neutral-800 flex items-center gap-2 transition-colors">
+                            <span>💻</span> Block Code (VS Code Highlight)
+                        </button>
+                        <button onclick="addBlock('bullet')" class="w-full text-left px-3 py-2 text-xs text-neutral-300 hover:bg-neutral-800 flex items-center gap-2 transition-colors">
+                            <span>•</span> Poin Titik (Bullet List)
+                        </button>
+                        <button onclick="addBlock('numbered')" class="w-full text-left px-3 py-2 text-xs text-neutral-300 hover:bg-neutral-800 flex items-center gap-2 transition-colors">
+                            <span>1.</span> Poin Nomor (Numbered)
+                        </button>
+                        <button onclick="addBlock('image')" class="w-full text-left px-3 py-2 text-xs text-neutral-300 hover:bg-neutral-800 flex items-center gap-2 transition-colors">
+                            <span>🖼️</span> Gambar (URL Link)
+                        </button>
+                        <button onclick="addBlock('link')" class="w-full text-left px-3 py-2 text-xs text-neutral-300 hover:bg-neutral-800 flex items-center gap-2 transition-colors">
+                            <span>🔗</span> Tautan / Download PDF (Link)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page Title & Icon Header -->
+            <div id="doc-header-area" class="mb-8 border-b border-notion-border pb-6">
+                <div id="doc-icon-container" class="mb-4"></div>
+                <h1 id="doc-title" class="text-3xl md:text-5xl font-bold outline-none text-white transition-colors" placeholder="Ketik Judul Materi..."></h1>
+            </div>
+
+            <!-- DYNAMIC BLOCKS CONTAINER -->
+            <div id="blocks-container" class="flex flex-col gap-6 min-h-[40vh]">
+                <!-- Rendered blocks go here -->
+            </div>
+            
+            <!-- Save Button for Admin -->
+            <div id="doc-admin-actions" class="fixed bottom-8 right-8 hidden z-50">
+                <button id="save-doc-btn" class="bg-white text-black px-5 py-2.5 rounded-lg shadow-xl font-medium hover:bg-neutral-200 transition-colors flex items-center gap-2 text-sm">
+                    💾 Simpan Materi
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- ADMIN EXPORT JSON FLOATING BUBBLE BUTTON (BOTTOM LEFT) -->
+    <div id="admin-export-bubble" class="fixed bottom-6 left-6 hidden z-40 animate-fade-in">
+        <button id="open-export-json-modal" class="bg-neutral-800 hover:bg-neutral-700 text-yellow-400 border border-neutral-700 shadow-2xl px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all hover:scale-105 active:scale-95">
+            <span class="text-base">📦</span>
+            <span>Export JSON</span>
+        </button>
+    </div>
+
+    <!-- MODAL EXPORT JSON -->
+    <div id="json-export-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-[#202020] border border-notion-border p-6 rounded-xl w-[90%] max-w-[480px] shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col gap-4">
+            <div class="flex items-center justify-between border-b border-notion-border pb-3">
+                <h2 class="text-base font-semibold text-white flex items-center gap-2">
+                    <span>📦</span> Export Materi ke JSON
+                </h2>
+                <button id="close-json-modal-btn" class="text-neutral-400 hover:text-white text-sm">✕</button>
+            </div>
+
+            <div class="flex gap-2 border-b border-neutral-800 pb-2">
+                <button id="tab-all-btn" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-white text-black transition-colors">Export Semua</button>
+                <button id="tab-select-btn" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-neutral-800 text-neutral-400 hover:text-white transition-colors">Pilih File Materi</button>
+            </div>
+
+            <div id="export-all-content" class="text-xs text-neutral-300 space-y-2 py-2">
+                <p>Fitur ini akan meng-export <strong class="text-white">semua materi dan folder</strong> dari Supabase menjadi file JSON utuh.</p>
+                <div class="bg-neutral-900/80 p-3 rounded-lg border border-neutral-800 text-[11px] text-neutral-400 space-y-1">
+                    <div>📌 <strong>Format Output JSON:</strong></div>
+                    <div>• Pemisah folder <code class="text-yellow-400">========================================</code>.</div>
+                    <div>• Tautan gambar & link file tetap aman terstruktur.</div>
+                </div>
+            </div>
+
+            <div id="export-select-content" class="hidden flex-col gap-2 max-h-60 overflow-y-auto pr-1 py-1">
+                <div class="text-xs text-neutral-400 mb-1">Pilih materi yang ingin di-export:</div>
+                <div id="json-selection-list" class="flex flex-col gap-1.5"></div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2 border-t border-notion-border">
+                <button type="button" id="cancel-json-btn" class="px-4 py-2 text-xs text-neutral-300 hover:bg-neutral-800 rounded-lg transition-colors">Batal</button>
+                <button type="button" id="generate-json-btn" class="px-4 py-2 text-xs bg-yellow-500 hover:bg-yellow-400 text-black font-semibold rounded-lg transition-colors flex items-center gap-1.5">
+                    <span>⚡</span> <span>Download JSON File</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDIT ITEM (JUDUL & IKON) -->
+    <div id="edit-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-[#202020] border border-notion-border p-6 rounded-xl w-[90%] max-w-[400px] shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col gap-4">
+            <h2 class="text-base font-semibold text-white flex items-center gap-2">
+                <span>✏️</span> Edit Detail Item
+            </h2>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-neutral-400 mb-1">Ikon (Emoji / Teks)</label>
+                    <input type="text" id="edit-item-icon" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-yellow-500">
+                </div>
+                <div>
+                    <label class="block text-neutral-400 mb-1">Judul Item</label>
+                    <input type="text" id="edit-item-name" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-yellow-500">
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button type="button" id="cancel-edit-btn" class="px-4 py-2 text-xs text-neutral-300 hover:bg-neutral-800 rounded-lg transition-colors">Batal</button>
+                <button type="button" id="save-edit-btn" class="px-4 py-2 text-xs bg-yellow-500 hover:bg-yellow-400 text-black font-semibold rounded-lg transition-colors">Simpan Perubahan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL LOGIN (PASSWORD ONLY - CENTERED CAPS TITLE) -->
+    <div id="login-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-[#202020] border border-notion-border p-6 rounded-xl w-[90%] max-w-[360px] shadow-2xl transform scale-95 transition-transform duration-300">
+            <h2 class="text-xl font-bold text-white mb-5 text-center tracking-widest uppercase">LOGIN</h2>
+            <form id="login-form" class="flex flex-col gap-4">
+                <div>
+                    <input type="password" id="admin-password-input" placeholder="Password" required class="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white placeholder-neutral-500 text-sm focus:outline-none focus:border-yellow-500 transition-colors">
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" id="cancel-login-btn" class="px-4 py-2 text-xs text-neutral-300 hover:bg-neutral-800 rounded-lg transition-colors">Batal</button>
+                    <button type="submit" class="px-4 py-2 text-xs bg-yellow-500 hover:bg-yellow-400 text-black font-semibold rounded-lg transition-colors">Sign In</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL ADD ITEM (FOLDER / PAGE) -->
+    <div id="add-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-[#202020] border border-notion-border p-6 rounded-xl w-[90%] max-w-[400px] shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col gap-4">
+            <h2 class="text-base font-semibold text-white">Tambah Item Baru</h2>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-neutral-400 mb-1">Tipe Item</label>
+                    <select id="add-item-type" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-2.5 text-white focus:outline-none">
+                        <option value="page">📄 File Materi (Page)</option>
+                        <option value="folder">📁 Folder Baru</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-neutral-400 mb-1">Ikon Emoji</label>
+                    <input type="text" id="add-item-icon" value="📄" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-2.5 text-white focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-neutral-400 mb-1">Judul Item</label>
+                    <input type="text" id="add-item-name" placeholder="Judul..." class="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-2.5 text-white focus:outline-none">
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button type="button" id="cancel-add-btn" class="px-4 py-2 text-xs text-neutral-300 hover:bg-neutral-800 rounded-lg transition-colors">Batal</button>
+                <button type="button" id="confirm-add-btn" class="px-4 py-2 text-xs bg-yellow-500 hover:bg-yellow-400 text-black font-semibold rounded-lg transition-colors">Buat Item</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONFIRM DELETE MODAL -->
+    <div id="confirm-delete-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-[#202020] border border-notion-border p-5 rounded-xl w-[90%] max-w-[360px] shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col gap-3">
+            <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+                <span>⚠️</span> Hapus Item Ini?
+            </h3>
+            <p id="delete-modal-text" class="text-xs text-neutral-400">Apakah Anda yakin ingin menghapus item ini?</p>
+            <div class="flex justify-end gap-2 pt-2 border-t border-neutral-800">
+                <button type="button" id="cancel-delete-btn" class="px-3.5 py-1.5 text-xs text-neutral-300 hover:bg-neutral-800 rounded-lg transition-colors">Batal</button>
+                <button type="button" id="confirm-delete-btn" class="px-3.5 py-1.5 text-xs bg-red-600 hover:bg-red-500 text-white font-medium rounded-lg transition-colors">Hapus Permanen</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==============================================================================
+        // SUPABASE CONFIGURATION
+        // ==============================================================================
+        const SUPABASE_URL = 'https://gyqginfwcmyzucqatswd.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_JMr4CWa0_KUgQvZHsHzkvA_0lc4hi_C';
+        const SUPABASE_ADMIN_EMAIL = 'hasansyaifulhuda24@gmail.com'; 
+
+        let supabaseClient = null;
+        if (SUPABASE_URL.startsWith('https://') && !SUPABASE_URL.includes('AKUN_SUPABASE_ANDA')) {
+            try {
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            } catch (err) {
+                console.warn('Gagal menghubungkan ke Supabase SDK:', err);
+            }
+        }
+
+        // STATE APLIKASI
+        let currentFolderId = null;
+        let currentPageId = null;
+        let isAdmin = false;
+        let editingItemId = null;
+        let deletingItemId = null;
+        let currentExportTab = 'all';
+
+        // MOCK DATA AWAL (Gunakan jika belum terhubung ke Supabase)
+        let itemsData = [
+            {
+                id: 'f1',
+                parent_id: null,
+                type: 'folder',
+                icon: '🐍',
+                name: 'Python',
+                updated_at: new Date().toISOString()
+            },
+            {
+                id: 'p1',
+                parent_id: 'f1',
+                type: 'page',
+                icon: '📄',
+                name: 'Pengenalan Python',
+                updated_at: new Date().toISOString(),
+                blocks: [
+                    { id: 'b1', type: 'heading', content: 'Pengenalan Bahasa Python' },
+                    { id: 'b2', type: 'paragraph', content: 'Python adalah bahasa pemrograman *interpretatif* tingkat tinggi yang banyak digunakan untuk *pengembangan web*, *data science*, dan *otomasi*.' },
+                    { id: 'b3_warn', type: 'callout', variant: 'warning', content: 'Catatan penting: Sintaksis Python sangat bersih dan mengutamakan keterbacaan kode!' },
+                    { id: 'b3_info', type: 'callout', variant: 'info', content: 'Informasi tambahan: Python diciptakan oleh Guido van Rossum pada tahun 1991.' },
+                    { id: 'b4', type: 'heading', content: 'Contoh Kode Pertama' },
+                    { id: 'b5', type: 'code', language: 'python', content: '# Contoh program sederhana Python dengan baris kode yang otomatis tertata rapi\nname = "Siswa"\nprint(f"Selamat belajar, {name}!")' },
+                    { id: 'b6', type: 'heading', content: 'Keunggulan Utama Python' },
+                    { id: 'b7', type: 'bullet', content: 'Bahasa pemrograman yang mudah dipelajari oleh pemula.' },
+                    { id: 'b8', type: 'bullet', content: 'Mendukung berbagai paradigma pemrograman seperti *OOP* dan fungsional.' },
+                    { id: 'b9', type: 'numbered', content: 'Instal Python di komputer Anda.' },
+                    { id: 'b10', type: 'numbered', content: 'Tulis kode pertama Anda menggunakan *code editor*.' },
+                    { id: 'b11', type: 'image', content: 'https://placehold.co/800x400/202020/eab308?text=Ilustrasi+Python' },
+                    { id: 'b12', type: 'link', content: 'https://www.python.org/|🔗 Kunjungi Website Resmi Python & Download' }
+                ]
+            }
+        ];
+
+        // UI TOAST NOTIFICATION HELPER
+        function showToast(message, isError = false) {
+            let toast = document.getElementById('toast-notification');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'toast-notification';
+                document.body.appendChild(toast);
+            }
+            toast.className = `fixed top-4 right-4 z-50 px-4 py-2.5 rounded-lg shadow-2xl text-xs sm:text-sm font-medium transition-all duration-300 transform translate-y-0 opacity-100 flex items-center gap-2 ${
+                isError ? 'bg-red-900/90 text-red-200 border border-red-700' : 'bg-neutral-800 text-yellow-400 border border-neutral-700'
+            }`;
+            toast.innerHTML = isError ? `<span>⚠️</span> <span>${message}</span>` : `<span>✨</span> <span>${message}</span>`;
+            setTimeout(() => {
+                toast.className = 'fixed top-4 right-4 z-50 px-4 py-2.5 rounded-lg shadow-2xl text-xs sm:text-sm font-medium transition-all duration-300 transform -translate-y-5 opacity-0 pointer-events-none flex items-center gap-2';
+            }, 3000);
+        }
+
+        // INITIAL LOAD & DATA SYNC
+        async function fetchItemsFromSupabase() {
+            if (!supabaseClient) return;
+            const syncEl = document.getElementById('loading-indicator');
+            syncEl?.classList.remove('hidden');
+
+            try {
+                const { data, error } = await supabaseClient.from('items').select('*');
+                if (error) throw error;
+                if (data && data.length > 0) {
+                    itemsData = data;
+                }
+            } catch (err) {
+                console.warn('Menggunakan data lokal fallback:', err.message);
+            } finally {
+                syncEl?.classList.add('hidden');
+                renderBreadcrumb();
+                renderCurrentView();
+            }
+        }
+
+        // NAVIGATION & VIEW SWITCHING
+        function renderCurrentView() {
+            if (currentPageId) {
+                document.getElementById('folder-view').classList.add('hidden');
+                document.getElementById('document-view').classList.remove('hidden');
+                renderDocumentView();
+            } else {
+                document.getElementById('document-view').classList.add('hidden');
+                document.getElementById('folder-view').classList.remove('hidden');
+                renderFolderView();
+            }
+            renderBreadcrumb();
+            updateAdminUI();
+        }
+
+        function navigateToFolder(folderId = null) {
+            currentFolderId = folderId;
+            currentPageId = null;
+            renderCurrentView();
+        }
+
+        function navigateToPage(pageId) {
+            currentPageId = pageId;
+            renderCurrentView();
+        }
+
+        // BREADCRUMB RENDERER
+        function renderBreadcrumb() {
+            const container = document.getElementById('breadcrumb');
+            container.innerHTML = '';
+
+            const rootBtn = document.createElement('button');
+            rootBtn.className = 'hover:text-white transition-colors flex items-center gap-1.5 font-medium';
+            rootBtn.innerHTML = `<span>📚</span><span>Materi</span>`;
+            rootBtn.onclick = () => navigateToFolder(null);
+            container.appendChild(rootBtn);
+
+            let path = [];
+            let curr = currentFolderId;
+            while (curr) {
+                const item = itemsData.find(i => i.id === curr);
+                if (item) {
+                    path.unshift(item);
+                    curr = item.parent_id;
+                } else break;
+            }
+
+            if (currentPageId) {
+                const page = itemsData.find(i => i.id === currentPageId);
+                if (page) {
+                    let parentFolder = itemsData.find(i => i.id === page.parent_id);
+                    while (parentFolder) {
+                        path.unshift(parentFolder);
+                        parentFolder = itemsData.find(i => i.id === parentFolder.parent_id);
+                    }
+                    path = Array.from(new Set(path));
+                    path.push(page);
+                }
+            }
+
+            path.forEach(item => {
+                const sep = document.createElement('span');
+                sep.className = 'text-neutral-600 text-xs';
+                sep.innerText = '/';
+                container.appendChild(sep);
+
+                const btn = document.createElement('button');
+                const isCurrent = item.id === (currentPageId || currentFolderId);
+                btn.className = `transition-colors flex items-center gap-1 font-medium ${isCurrent ? 'text-white' : 'hover:text-white'}`;
+                btn.innerHTML = `<span>${item.icon || '📄'}</span><span>${item.name}</span>`;
+                btn.onclick = () => {
+                    if (item.type === 'folder') navigateToFolder(item.id);
+                    else navigateToPage(item.id);
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        // FOLDER VIEW TABLE RENDERER
+        function renderFolderView() {
+            const tbody = document.getElementById('table-body');
+            const emptyState = document.getElementById('empty-state');
+            tbody.innerHTML = '';
+
+            const items = itemsData.filter(i => i.parent_id === currentFolderId);
+
+            if (items.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                items.forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'border-b border-notion-border/50 hover:bg-notion-hover/60 transition-colors group cursor-pointer text-xs sm:text-sm';
+
+                    const formattedDate = new Date(item.updated_at || Date.now()).toLocaleDateString('id-ID', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+
+                    tr.innerHTML = `
+                        <td class="py-3 pr-2 font-medium text-neutral-200 group-hover:text-white">
+                            <div class="flex items-center gap-2">
+                                <span class="text-base shrink-0">${item.icon || (item.type === 'folder' ? '📁' : '📄')}</span>
+                                <span class="truncate max-w-[180px] sm:max-w-md">${item.name}</span>
+                            </div>
+                        </td>
+                        <td class="py-3 text-right text-neutral-400 text-[11px] sm:text-xs whitespace-nowrap">
+                            ${formattedDate}
+                        </td>
+                        <td class="py-3 text-right admin-col ${isAdmin ? '' : 'hidden'}">
+                            <div class="flex items-center justify-end gap-1">
+                                <button onclick="event.stopPropagation(); openEditModal('${item.id}')" class="p-1 hover:bg-neutral-800 rounded text-neutral-400 hover:text-yellow-400 transition-colors" title="Edit Item">
+                                    ✏️
+                                </button>
+                                <button onclick="event.stopPropagation(); openDeleteModal('${item.id}')" class="p-1 hover:bg-neutral-800 rounded text-neutral-400 hover:text-red-400 transition-colors" title="Hapus Item">
+                                    🗑️
+                                </button>
+                            </div>
+                        </td>
+                    `;
+
+                    tr.onclick = () => {
+                        if (item.type === 'folder') navigateToFolder(item.id);
+                        else navigateToPage(item.id);
+                    };
+
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        // DOCUMENT VIEW & BLOCK RENDERER
+        function renderDocumentView() {
+            const page = itemsData.find(i => i.id === currentPageId);
+            if (!page) return;
+
+            document.getElementById('doc-icon-container').innerHTML = `<span class="text-4xl md:text-5xl">${page.icon || '📄'}</span>`;
+            
+            const titleEl = document.getElementById('doc-title');
+            titleEl.innerText = page.name;
+            titleEl.contentEditable = isAdmin;
+
+            const blocksContainer = document.getElementById('blocks-container');
+            blocksContainer.innerHTML = '';
+
+            const blocks = page.blocks || [];
+            blocks.forEach((block, index) => {
+                const blockEl = createBlockElement(block, index);
+                blocksContainer.appendChild(blockEl);
+            });
+
+            // Re-highlight code blocks via PrismJS
+            setTimeout(() => {
+                if (window.Prism) Prism.highlightAll();
+            }, 50);
+        }
+
+        function createBlockElement(block, index) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group/block animate-fade-in';
+            wrapper.dataset.index = index;
+
+            let blockContent = '';
+
+            if (block.type === 'heading') {
+                blockContent = `<h2 class="text-xl md:text-2xl font-bold text-white outline-none border-b border-transparent focus:border-neutral-700 py-1" ${isAdmin ? 'contenteditable="true"' : ''} onblur="updateBlockContent(${index}, this.innerText)">${block.content || ''}</h2>`;
+            } else if (block.type === 'paragraph') {
+                blockContent = `<p class="text-sm md:text-base text-neutral-300 leading-relaxed outline-none border-b border-transparent focus:border-neutral-700 py-1" ${isAdmin ? 'contenteditable="true"' : ''} onblur="updateBlockContent(${index}, this.innerText)">${block.content || ''}</p>`;
+            } else if (block.type === 'callout') {
+                const variant = block.variant || 'warning';
+                let variantStyle = 'bg-yellow-950/20 border-yellow-600/50 text-yellow-200/90';
+                let icon = '💡';
+
+                if (variant === 'info') {
+                    variantStyle = 'bg-blue-950/20 border-blue-600/50 text-blue-200/90';
+                    icon = 'ℹ️';
+                } else if (variant === 'danger') {
+                    variantStyle = 'bg-red-950/20 border-red-600/50 text-red-200/90';
+                    icon = '⚠️';
+                } else if (variant === 'success') {
+                    variantStyle = 'bg-emerald-950/20 border-emerald-600/50 text-emerald-200/90';
+                    icon = '✅';
+                }
+
+                blockContent = `
+                    <div class="p-4 rounded-xl border ${variantStyle} flex flex-col gap-2 relative">
+                        ${isAdmin ? `
+                            <div class="flex items-center justify-between border-b border-white/10 pb-2 mb-1">
+                                <span class="text-[10px] uppercase font-semibold text-neutral-400">Tipe Callout</span>
+                                <select onchange="updateCalloutVariant(${index}, this.value)" class="bg-neutral-900 text-white text-xs border border-neutral-700 rounded px-2 py-1 focus:outline-none">
+                                    <option value="warning" ${variant === 'warning' ? 'selected' : ''}>💡 Catatan (Kuning)</option>
+                                    <option value="info" ${variant === 'info' ? 'selected' : ''}>ℹ️ Informasi (Biru)</option>
+                                    <option value="danger" ${variant === 'danger' ? 'selected' : ''}>⚠️ Peringatan (Merah)</option>
+                                    <option value="success" ${variant === 'success' ? 'selected' : ''}>✅ Tips / Solusi (Hijau)</option>
+                                </select>
+                            </div>
+                        ` : ''}
+                        <div class="flex items-start gap-3">
+                            <span class="text-xl shrink-0 select-none">${icon}</span>
+                            <div class="text-sm leading-relaxed outline-none flex-1 py-0.5" ${isAdmin ? 'contenteditable="true"' : ''} onblur="updateBlockContent(${index}, this.innerText)">${block.content || ''}</div>
+                        </div>
+                    </div>
+                `;
+            } else if (block.type === 'code') {
+                const lang = block.language || 'python';
+                blockContent = `
+                    <div class="rounded-xl overflow-hidden border border-neutral-800 bg-[#121212] flex flex-col relative group/code">
+                        <div class="flex items-center justify-between px-3 py-1.5 bg-[#1e1e1e] border-b border-neutral-800 text-xs">
+                            ${isAdmin ? `
+                                <select onchange="updateCodeLanguage(${index}, this.value)" class="bg-neutral-900 text-neutral-300 text-xs border border-neutral-700 rounded px-2 py-0.5 focus:outline-none">
+                                    <option value="python" ${lang === 'python' ? 'selected' : ''}>🐍 Python</option>
+                                    <option value="javascript" ${lang === 'javascript' ? 'selected' : ''}>📜 JavaScript</option>
+                                    <option value="html" ${lang === 'html' ? 'selected' : ''}>🌐 HTML</option>
+                                    <option value="css" ${lang === 'css' ? 'selected' : ''}>🎨 CSS</option>
+                                    <option value="cpp" ${lang === 'cpp' ? 'selected' : ''}>⚡ C++</option>
+                                    <option value="java" ${lang === 'java' ? 'selected' : ''}>☕ Java</option>
+                                    <option value="php" ${lang === 'php' ? 'selected' : ''}>🐘 PHP</option>
+                                    <option value="sql" ${lang === 'sql' ? 'selected' : ''}>🗄️ SQL</option>
+                                    <option value="bash" ${lang === 'bash' ? 'selected' : ''}>💻 Bash</option>
+                                    <option value="json" ${lang === 'json' ? 'selected' : ''}>📦 JSON</option>
+                                </select>
+                            ` : `<span class="text-neutral-400 font-mono uppercase text-[11px]">${lang}</span>`}
+                            
+                            <button onclick="copyCodeBlockContent(${index})" class="text-xs text-neutral-400 hover:text-white bg-neutral-800 hover:bg-neutral-700 px-2.5 py-1 rounded transition-colors flex items-center gap-1">
+                                📋 <span>Salin</span>
+                            </button>
+                        </div>
+                        
+                        ${isAdmin ? `
+                            <textarea onblur="updateBlockContent(${index}, this.value)" class="w-full bg-[#121212] text-neutral-200 p-4 font-mono text-xs sm:text-sm focus:outline-none min-h-[100px] resize-y code-font whitespace-pre-wrap">${block.content || ''}</textarea>
+                        ` : `
+                            <pre class="p-4 m-0 language-${lang}"><code class="language-${lang}">${escapeHtml(block.content || '')}</code></pre>
+                        `}
+                    </div>
+                `;
+            } else if (block.type === 'bullet') {
+                blockContent = `
+                    <div class="flex items-start gap-3 pl-2">
+                        <span class="text-yellow-500 font-bold text-base select-none shrink-0">•</span>
+                        <div class="text-sm md:text-base text-neutral-300 outline-none flex-1 py-0.5" ${isAdmin ? 'contenteditable="true"' : ''} onblur="updateBlockContent(${index}, this.innerText)">${block.content || ''}</div>
+                    </div>
+                `;
+            } else if (block.type === 'numbered') {
+                blockContent = `
+                    <div class="flex items-start gap-2.5 pl-1">
+                        <span class="text-neutral-500 font-medium text-sm code-font select-none shrink-0 min-w-[20px] text-right">${index + 1}.</span>
+                        <div class="text-sm md:text-base text-neutral-300 outline-none flex-1 py-0.5" ${isAdmin ? 'contenteditable="true"' : ''} onblur="updateBlockContent(${index}, this.innerText)">${block.content || ''}</div>
+                    </div>
+                `;
+            } else if (block.type === 'image') {
+                blockContent = `
+                    <div class="flex flex-col gap-2">
+                        <div class="rounded-xl overflow-hidden border border-neutral-800 max-w-full bg-neutral-900 flex justify-center items-center">
+                            <img src="${block.content || 'https://placehold.co/800x400/202020/eab308?text=Image+Placeholder'}" alt="Materi" class="max-w-full h-auto object-contain max-h-[450px]" onerror="this.src='https://placehold.co/800x400/202020/eab308?text=Gambar+Gagal+Dimuat'">
+                        </div>
+                        ${isAdmin ? `
+                            <input type="text" value="${block.content || ''}" placeholder="Masukkan URL Gambar..." onblur="updateBlockContent(${index}, this.value)" class="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-xs text-neutral-300 focus:outline-none">
+                        ` : ''}
+                    </div>
+                `;
+            } else if (block.type === 'link') {
+                const parts = (block.content || '').split('|');
+                const url = parts[0] || '#';
+                const label = parts[1] || url;
+                blockContent = `
+                    <div class="flex flex-col gap-2">
+                        <a href="${url}" target="_blank" rel="noopener noreferrer" class="p-3.5 rounded-xl border border-neutral-800 bg-neutral-900/60 hover:bg-neutral-800 text-yellow-400 hover:text-yellow-300 transition-colors flex items-center gap-2.5 text-sm font-medium w-full">
+                            <span>🔗</span> <span class="underline truncate">${label}</span>
+                        </a>
+                        ${isAdmin ? `
+                            <input type="text" value="${block.content || ''}" placeholder="Format: URL|Label Tautan..." onblur="updateBlockContent(${index}, this.value)" class="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-xs text-neutral-300 focus:outline-none">
+                        ` : ''}
+                    </div>
+                `;
+            }
+
+            // Controls for Admin (Delete Block)
+            const adminControls = isAdmin ? `
+                <button onclick="removeBlock(${index})" class="opacity-0 group-hover/block:opacity-100 transition-opacity absolute -right-8 top-1/2 -translate-y-1/2 p-1.5 hover:bg-red-900/40 text-red-400 rounded text-xs" title="Hapus Blok">
+                    ✕
+                </button>
+            ` : '';
+
+            wrapper.innerHTML = blockContent + adminControls;
+            return wrapper;
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        // BLOCK EDITING HANDLERS
+        function updateBlockContent(index, newContent) {
+            const page = itemsData.find(i => i.id === currentPageId);
+            if (page && page.blocks && page.blocks[index]) {
+                page.blocks[index].content = newContent;
+            }
+        }
+
+        function updateCalloutVariant(index, variant) {
+            const page = itemsData.find(i => i.id === currentPageId);
+            if (page && page.blocks && page.blocks[index]) {
+                page.blocks[index].variant = variant;
+                renderDocumentView();
+            }
+        }
+
+        function updateCodeLanguage(index, language) {
+            const page = itemsData.find(i => i.id === currentPageId);
+            if (page && page.blocks && page.blocks[index]) {
+                page.blocks[index].language = language;
+                renderDocumentView();
+            }
+        }
+
+        function copyCodeBlockContent(index) {
+            const page = itemsData.find(i => i.id === currentPageId);
+            if (page && page.blocks && page.blocks[index]) {
+                const text = page.blocks[index].content || '';
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('Kode berhasil disalin ke clipboard!');
+                }).catch(() => {
+                    showToast('Gagal menyalin kode', true);
+                });
+            }
+        }
+
+        function addBlock(type) {
+            const page = itemsData.find(i => i.id === currentPageId);
+            if (!page) return;
+            if (!page.blocks) page.blocks = [];
+
+            const newBlock = {
+                id: 'b_' + Date.now(),
+                type: type,
+                content: type === 'code' ? '# Tulis kode Anda di sini' : 'Teks baru...'
+            };
+
+            if (type === 'callout') newBlock.variant = 'warning';
+            if (type === 'code') newBlock.language = 'python';
+
+            page.blocks.push(newBlock);
+            renderDocumentView();
+            document.getElementById('block-dropdown').classList.add('hidden');
+        }
+
+        function removeBlock(index) {
+            const page = itemsData.find(i => i.id === currentPageId);
+            if (page && page.blocks) {
+                page.blocks.splice(index, 1);
+                renderDocumentView();
+            }
+        }
+
+        // GLOBAL SEARCH SYSTEM
+        const searchToggleBtn = document.getElementById('search-toggle-btn');
+        const searchInputBox = document.getElementById('search-input-box');
+        const globalSearchInput = document.getElementById('global-search-input');
+        const closeSearchBtn = document.getElementById('close-search-btn');
+        const searchSuggestions = document.getElementById('search-suggestions');
+
+        searchToggleBtn?.addEventListener('click', () => {
+            searchToggleBtn.classList.add('hidden');
+            searchInputBox.classList.remove('hidden');
+            globalSearchInput.focus();
+        });
+
+        closeSearchBtn?.addEventListener('click', () => {
+            searchInputBox.classList.add('hidden');
+            searchToggleBtn.classList.remove('hidden');
+            globalSearchInput.value = '';
+            searchSuggestions.classList.add('hidden');
+        });
+
+        globalSearchInput?.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            if (!query) {
+                searchSuggestions.classList.add('hidden');
+                return;
+            }
+
+            const results = itemsData.filter(item => item.name.toLowerCase().includes(query));
+
+            searchSuggestions.innerHTML = '';
+            if (results.length === 0) {
+                searchSuggestions.innerHTML = `<div class="px-4 py-3 text-xs text-neutral-500">Tidak ada judul yang cocok...</div>`;
+            } else {
+                results.forEach(res => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'px-4 py-2.5 hover:bg-neutral-800 cursor-pointer flex items-center gap-2.5 text-xs text-neutral-200 hover:text-white border-b border-neutral-800/50 last:border-0';
+                    itemDiv.innerHTML = `<span>${res.icon || (res.type === 'folder' ? '📁' : '📄')}</span><span>${res.name}</span>`;
+                    itemDiv.onclick = () => {
+                        if (res.type === 'folder') navigateToFolder(res.id);
+                        else navigateToPage(res.id);
+                        searchInputBox.classList.add('hidden');
+                        searchToggleBtn.classList.remove('hidden');
+                        globalSearchInput.value = '';
+                        searchSuggestions.classList.add('hidden');
+                    };
+                    searchSuggestions.appendChild(itemDiv);
+                });
+            }
+            searchSuggestions.classList.remove('hidden');
+        });
+
+        // EXPORT TO JSON SYSTEM
+        const openExportJsonBtn = document.getElementById('open-export-json-modal');
+        const closeJsonModalBtn = document.getElementById('close-json-modal-btn');
+        const jsonModal = document.getElementById('json-export-modal');
+        const generateJsonBtn = document.getElementById('generate-json-btn');
+        const cancelJsonBtn = document.getElementById('cancel-json-btn');
+        const tabAllBtn = document.getElementById('tab-all-btn');
+        const tabSelectBtn = document.getElementById('tab-select-btn');
+        const exportAllContent = document.getElementById('export-all-content');
+        const exportSelectContent = document.getElementById('export-select-content');
+        const jsonSelectionList = document.getElementById('json-selection-list');
+
+        openExportJsonBtn?.addEventListener('click', () => {
+            jsonModal.classList.remove('opacity-0', 'pointer-events-none');
+            jsonModal.children[0].classList.remove('scale-95');
+            renderJsonSelectionList();
+        });
+
+        function closeJsonModal() {
+            jsonModal.classList.add('opacity-0', 'pointer-events-none');
+            jsonModal.children[0].classList.add('scale-95');
+        }
+
+        closeJsonModalBtn?.addEventListener('click', closeJsonModal);
+        cancelJsonBtn?.addEventListener('click', closeJsonModal);
+
+        tabAllBtn?.addEventListener('click', () => {
+            currentExportTab = 'all';
+            tabAllBtn.className = 'px-3 py-1.5 text-xs font-medium rounded-lg bg-white text-black transition-colors';
+            tabSelectBtn.className = 'px-3 py-1.5 text-xs font-medium rounded-lg bg-neutral-800 text-neutral-400 hover:text-white transition-colors';
+            exportAllContent.classList.remove('hidden');
+            exportSelectContent.classList.add('hidden');
+        });
+
+        tabSelectBtn?.addEventListener('click', () => {
+            currentExportTab = 'select';
+            tabSelectBtn.className = 'px-3 py-1.5 text-xs font-medium rounded-lg bg-white text-black transition-colors';
+            tabAllBtn.className = 'px-3 py-1.5 text-xs font-medium rounded-lg bg-neutral-800 text-neutral-400 hover:text-white transition-colors';
+            exportSelectContent.classList.remove('hidden');
+            exportAllContent.classList.add('hidden');
+        });
+
+        function renderJsonSelectionList() {
+            jsonSelectionList.innerHTML = '';
+            const pages = itemsData.filter(i => i.type === 'page');
+            pages.forEach(page => {
+                const label = document.createElement('label');
+                label.className = 'flex items-center gap-2 text-xs text-neutral-300 hover:text-white cursor-pointer bg-neutral-900 p-2 rounded border border-neutral-800';
+                label.innerHTML = `<input type="checkbox" value="${page.id}" class="json-checkbox rounded bg-neutral-800 border-neutral-700 text-yellow-500"> <span>${page.icon || '📄'} ${page.name}</span>`;
+                jsonSelectionList.appendChild(label);
+            });
+        }
+
+        generateJsonBtn?.addEventListener('click', () => {
+            let exportData = [];
+
+            if (currentExportTab === 'all') {
+                exportData = itemsData;
+            } else {
+                const checkedIds = Array.from(document.querySelectorAll('.json-checkbox:checked')).map(cb => cb.value);
+                exportData = itemsData.filter(item => checkedIds.includes(item.id));
+            }
+
+            // Create JSON blob with clean dividers
+            const jsonString = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `materi_export_${new Date().toISOString().slice(0, 10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            showToast('File JSON berhasil didownload!');
+            closeJsonModal();
+        });
+
+        // AUTHENTICATION & ADMIN MODALS
+        const authBtn = document.getElementById('auth-btn');
+        const loginModal = document.getElementById('login-modal');
+        const loginForm = document.getElementById('login-form');
+        const cancelLoginBtn = document.getElementById('cancel-login-btn');
+
+        authBtn?.addEventListener('click', async () => {
+            if (isAdmin) {
+                if (supabaseClient) {
+                    await supabaseClient.auth.signOut();
+                }
+                isAdmin = false;
+                showToast('Anda telah logout');
+                renderCurrentView();
+            } else {
+                loginModal.classList.remove('opacity-0', 'pointer-events-none');
+                loginModal.children[0].classList.remove('scale-95');
+            }
+        });
+
+        function closeLoginModal() {
+            loginModal.classList.add('opacity-0', 'pointer-events-none');
+            loginModal.children[0].classList.add('scale-95');
+            document.getElementById('admin-password-input').value = '';
+        }
+
+        cancelLoginBtn?.addEventListener('click', closeLoginModal);
+
+        loginForm?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const password = document.getElementById('admin-password-input').value;
+            if (!password) return;
+
+            if (supabaseClient) {
+                try {
+                    const { data, error } = await supabaseClient.auth.signInWithPassword({
+                        email: SUPABASE_ADMIN_EMAIL,
+                        password: password
+                    });
+                    if (error) throw error;
+                    isAdmin = true;
+                    showToast('Login berhasil!');
+                    closeLoginModal();
+                    renderCurrentView();
+                } catch (err) {
+                    showToast('Login gagal: ' + err.message, true);
+                }
+            } else {
+                showToast('Isi SUPABASE_URL & SUPABASE_ANON_KEY terlebih dahulu!', true);
+            }
+        });
+
+        function updateAdminUI() {
+            authBtn.innerText = isAdmin ? 'Logout' : 'Login';
+            
+            document.querySelectorAll('.admin-col').forEach(el => {
+                if (isAdmin) el.classList.remove('hidden');
+                else el.classList.add('hidden');
+            });
+
+            const addItemBtn = document.getElementById('add-item-btn');
+            const blockMenuContainer = document.getElementById('block-menu-container');
+            const docAdminActions = document.getElementById('doc-admin-actions');
+            const adminExportBubble = document.getElementById('admin-export-bubble');
+
+            if (isAdmin) {
+                addItemBtn?.classList.remove('hidden');
+                blockMenuContainer?.classList.remove('hidden');
+                docAdminActions?.classList.remove('hidden');
+                adminExportBubble?.classList.remove('hidden');
+            } else {
+                addItemBtn?.classList.add('hidden');
+                blockMenuContainer?.classList.add('hidden');
+                docAdminActions?.classList.add('hidden');
+                adminExportBubble?.classList.add('hidden');
+            }
+        }
+
+        // EDIT ITEM MODAL HANDLERS
+        const editModal = document.getElementById('edit-modal');
+        const cancelEditBtn = document.getElementById('cancel-edit-btn');
+        const saveEditBtn = document.getElementById('save-edit-btn');
+
+        function openEditModal(id) {
+            editingItemId = id;
+            const item = itemsData.find(i => i.id === id);
+            if (!item) return;
+
+            document.getElementById('edit-item-icon').value = item.icon || '📄';
+            document.getElementById('edit-item-name').value = item.name || '';
+
+            editModal.classList.remove('opacity-0', 'pointer-events-none');
+            editModal.children[0].classList.remove('scale-95');
+        }
+
+        function closeEditModal() {
+            editModal.classList.add('opacity-0', 'pointer-events-none');
+            editModal.children[0].classList.add('scale-95');
+            editingItemId = null;
+        }
+
+        cancelEditBtn?.addEventListener('click', closeEditModal);
+
+        saveEditBtn?.addEventListener('click', async () => {
+            if (!editingItemId) return;
+            const item = itemsData.find(i => i.id === editingItemId);
+            if (!item) return;
+
+            item.icon = document.getElementById('edit-item-icon').value || '📄';
+            item.name = document.getElementById('edit-item-name').value || 'Tanpa Judul';
+            item.updated_at = new Date().toISOString();
+
+            if (supabaseClient) {
+                await supabaseClient.from('items').update({
+                    icon: item.icon,
+                    name: item.name,
+                    updated_at: item.updated_at
+                }).eq('id', item.id);
+            }
+
+            showToast('Detail item berhasil diperbarui');
+            closeEditModal();
+            renderCurrentView();
+        });
+
+        // DELETE MODAL HANDLERS
+        const deleteModal = document.getElementById('confirm-delete-modal');
+        const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+
+        function openDeleteModal(id) {
+            deletingItemId = id;
+            deleteModal.classList.remove('opacity-0', 'pointer-events-none');
+            deleteModal.children[0].classList.remove('scale-95');
+        }
+
+        function closeDeleteModal() {
+            deleteModal.classList.add('opacity-0', 'pointer-events-none');
+            deleteModal.children[0].classList.add('scale-95');
+            deletingItemId = null;
+        }
+
+        cancelDeleteBtn?.addEventListener('click', closeDeleteModal);
+
+        confirmDeleteBtn?.addEventListener('click', async () => {
+            if (!deletingItemId) return;
+
+            if (supabaseClient) {
+                await supabaseClient.from('items').delete().eq('id', deletingItemId);
+            }
+
+            itemsData = itemsData.filter(i => i.id !== deletingItemId && i.parent_id !== deletingItemId);
+            showToast('Item berhasil dihapus');
+            closeDeleteModal();
+            renderCurrentView();
+        });
+
+        // ADD ITEM MODAL HANDLERS
+        const addModal = document.getElementById('add-modal');
+        const addItemBtn = document.getElementById('add-item-btn');
+        const cancelAddBtn = document.getElementById('cancel-add-btn');
+        const confirmAddBtn = document.getElementById('confirm-add-btn');
+
+        addItemBtn?.addEventListener('click', () => {
+            addModal.classList.remove('opacity-0', 'pointer-events-none');
+            addModal.children[0].classList.remove('scale-95');
+        });
+
+        function closeAddModal() {
+            addModal.classList.add('opacity-0', 'pointer-events-none');
+            addModal.children[0].classList.add('scale-95');
+        }
+
+        cancelAddBtn?.addEventListener('click', closeAddModal);
+
+        confirmAddBtn?.addEventListener('click', async () => {
+            const type = document.getElementById('add-item-type').value;
+            const icon = document.getElementById('add-item-icon').value || (type === 'folder' ? '📁' : '📄');
+            const name = document.getElementById('add-item-name').value || 'Item Baru';
+
+            const newItem = {
+                id: 'item_' + Date.now(),
+                parent_id: currentFolderId,
+                type: type,
+                icon: icon,
+                name: name,
+                blocks: type === 'page' ? [] : null,
+                updated_at: new Date().toISOString()
+            };
+
+            if (supabaseClient) {
+                await supabaseClient.from('items').insert([newItem]);
+            }
+
+            itemsData.push(newItem);
+            showToast('Item baru berhasil dibuat');
+            closeAddModal();
+            renderCurrentView();
+        });
+
+        // SAVE DOCUMENT BUTTON (ADMIN)
+        document.getElementById('save-doc-btn')?.addEventListener('click', async () => {
+            if (!currentPageId) return;
+            const page = itemsData.find(i => i.id === currentPageId);
+            if (!page) return;
+
+            page.name = document.getElementById('doc-title').innerText;
+            page.updated_at = new Date().toISOString();
+
+            if (supabaseClient) {
+                await supabaseClient.from('items').update({
+                    name: page.name,
+                    blocks: page.blocks,
+                    updated_at: page.updated_at
+                }).eq('id', page.id);
+            }
+
+            showToast('Materi berhasil disimpan!');
+            renderBreadcrumb();
+        });
+
+        // BLOCK DROPDOWN TOGGLE
+        document.getElementById('toggle-block-menu')?.addEventListener('click', () => {
+            document.getElementById('block-dropdown').classList.toggle('hidden');
+        });
+
+        // INITIALIZE ON LOAD
+        window.addEventListener('DOMContentLoaded', async () => {
+            if (supabaseClient) {
+                // Cek status sesi login Supabase secara otomatis saat halaman dimuat
+                try {
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+                    if (session) {
+                        isAdmin = true;
+                    }
+                } catch (err) {
+                    console.warn('Gagal mengecek sesi login:', err);
+                }
+
+                supabaseClient.auth.onAuthStateChange((_event, session) => {
+                    isAdmin = !!session;
+                    updateAdminUI();
+                });
+            }
+
+            fetchItemsFromSupabase();
+            renderCurrentView();
+        });
+    </script>
+</body>
+</html>
