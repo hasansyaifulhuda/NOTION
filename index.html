@@ -370,11 +370,11 @@
 
     <script>
         // ==============================================================================
-        // SUPABASE CONFIGURATION (GANTI DENGAN KUNCI SUPABASE ASLI ANDA)
+        // SUPABASE CONFIGURATION
         // ==============================================================================
         const SUPABASE_URL = 'https://gyqginfwcmyzucqatswd.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_JMr4CWa0_KUgQvZHsHzkvA_0lc4hi_C';
-        const SUPABASE_ADMIN_EMAIL = 'hasansyaifulhuda24@gmail.com'; // Sesuaikan dengan email Admin di Supabase Auth Anda
+        const SUPABASE_ADMIN_EMAIL = 'hasansyaifulhuda24@gmail.com';
 
         let supabaseClient = null;
         if (SUPABASE_URL.startsWith('https://') && !SUPABASE_URL.includes('AKUN_SUPABASE_ANDA')) {
@@ -393,8 +393,26 @@
         let deletingItemId = null;
         let currentExportTab = 'all';
 
-        // DATA MATERI (BERSIH / KOSONG UNTUK DIGUNAKAN DENGAN SUPABASE REAL)
+        // DATA MATERI (BERSIH UNTUK DIGUNAKAN DENGAN SUPABASE REAL)
         let itemsData = [];
+
+        // INLINE MARKDOWN PARSER (Mengubah *teks* atau **teks** menjadi Bold/Format Visual)
+        function formatMarkdown(str) {
+            if (!str) return '';
+            let formatted = str;
+            
+            // Konversi **teks** atau *teks* menjadi <strong> (Teks Tebal / Bold)
+            formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-white">$1</strong>');
+            formatted = formatted.replace(/\*(.*?)\*/g, '<strong class="font-bold text-white">$1</strong>');
+            
+            // Konversi _teks_ menjadi <em> (Teks Miring / Italic)
+            formatted = formatted.replace(/_(.*?)_/g, '<em class="italic">$1</em>');
+            
+            // Konversi `kode` menjadi inline code block
+            formatted = formatted.replace(/`(.*?)`/g, '<code class="bg-neutral-800 text-yellow-400 px-1.5 py-0.5 rounded font-mono text-xs">$1</code>');
+            
+            return formatted;
+        }
 
         // UI TOAST NOTIFICATION HELPER
         function showToast(message, isError = false) {
@@ -602,9 +620,9 @@
             let blockContent = '';
 
             if (block.type === 'heading') {
-                blockContent = `<h2 class="text-xl md:text-2xl font-bold text-white outline-none border-b border-transparent focus:border-neutral-700 py-1" ${isAdmin ? 'contenteditable="true"' : ''} onblur="updateBlockContent(${index}, this.innerText)">${block.content || ''}</h2>`;
+                blockContent = `<h2 class="text-xl md:text-2xl font-bold text-white outline-none border-b border-transparent focus:border-neutral-700 py-1" ${isAdmin ? 'contenteditable="true"' : ''} onblur="updateBlockContent(${index}, this.innerHTML)">${formatMarkdown(block.content || '')}</h2>`;
             } else if (block.type === 'paragraph') {
-                blockContent = `<p class="text-sm md:text-base text-neutral-300 leading-relaxed outline-none border-b border-transparent focus:border-neutral-700 py-1" ${isAdmin ? 'contenteditable="true"' : ''} onblur="updateBlockContent(${index}, this.innerText)">${block.content || ''}</p>`;
+                blockContent = `<p class="text-sm md:text-base text-neutral-300 leading-relaxed outline-none border-b border-transparent focus:border-neutral-700 py-1" ${isAdmin ? 'contenteditable="true"' : ''} onblur="updateBlockContent(${index}, this.innerHTML)">${formatMarkdown(block.content || '')}</p>`;
             } else if (block.type === 'callout') {
                 const variant = block.variant || 'warning';
                 let variantStyle = 'bg-yellow-950/20 border-yellow-600/50 text-yellow-200/90';
@@ -636,7 +654,7 @@
                         ` : ''}
                         <div class="flex items-start gap-3">
                             <span class="text-xl shrink-0 select-none">${icon}</span>
-                            <div class="text-sm leading-relaxed outline-none flex-1 py-0.5" ${isAdmin ? 'contenteditable="true"' : ''} onblur="updateBlockContent(${index}, this.innerText)">${block.content || ''}</div>
+                            <div class="text-sm leading-relaxed outline-none flex-1 py-0.5" ${isAdmin ? 'contenteditable="true"' : ''} onblur="updateBlockContent(${index}, this.innerHTML)">${formatMarkdown(block.content || '')}</div>
                         </div>
                     </div>
                 `;
@@ -676,14 +694,14 @@
                 blockContent = `
                     <div class="flex items-start gap-3 pl-2">
                         <span class="text-yellow-500 font-bold text-base select-none shrink-0">•</span>
-                        <div class="text-sm md:text-base text-neutral-300 outline-none flex-1 py-0.5" ${isAdmin ? 'contenteditable="true"' : ''} onblur="updateBlockContent(${index}, this.innerText)">${block.content || ''}</div>
+                        <div class="text-sm md:text-base text-neutral-300 outline-none flex-1 py-0.5" ${isAdmin ? 'contenteditable="true"' : ''} onblur="updateBlockContent(${index}, this.innerHTML)">${formatMarkdown(block.content || '')}</div>
                     </div>
                 `;
             } else if (block.type === 'numbered') {
                 blockContent = `
                     <div class="flex items-start gap-2.5 pl-1">
                         <span class="text-neutral-500 font-medium text-sm code-font select-none shrink-0 min-w-[20px] text-right">${index + 1}.</span>
-                        <div class="text-sm md:text-base text-neutral-300 outline-none flex-1 py-0.5" ${isAdmin ? 'contenteditable="true"' : ''} onblur="updateBlockContent(${index}, this.innerText)">${block.content || ''}</div>
+                        <div class="text-sm md:text-base text-neutral-300 outline-none flex-1 py-0.5" ${isAdmin ? 'contenteditable="true"' : ''} onblur="updateBlockContent(${index}, this.innerHTML)">${formatMarkdown(block.content || '')}</div>
                     </div>
                 `;
             } else if (block.type === 'image') {
