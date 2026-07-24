@@ -71,6 +71,15 @@
             scroll-behavior: smooth;
         }
 
+        /* PLACEHOLDER STYLE UNTUK BLOK CONTENTEDITABLE (BAYANGAN TEKS) */
+        [contenteditable]:empty::before {
+            content: attr(placeholder);
+            color: #555555;
+            font-style: normal;
+            pointer-events: none;
+            display: inline-block;
+        }
+
         /* Custom VS Code Dark Theme Overrides for Prism Syntax Highlighting */
         code[class*="language-"], pre[class*="language-"] {
             font-family: 'Fira Code', monospace !important;
@@ -123,7 +132,7 @@
             </div>
         </div>
         <div class="flex items-center shrink-0 ml-2 gap-2">
-            <div id="loading-indicator" class="hidden text-xs text-yellow-400 flex items-center gap-1">
+            <div id="loading-indicator" class="hidden text-xs text-yellow-400 flex items-center gap-1 font-medium bg-neutral-900 px-2.5 py-1 rounded-full border border-neutral-800">
                 <span class="animate-spin">⏳</span> Sync...
             </div>
             <button id="auth-btn" class="text-sm font-medium text-neutral-300 hover:text-white transition-colors bg-neutral-800/60 hover:bg-neutral-800 px-3 py-1.5 rounded-md border border-neutral-700/50">Login</button>
@@ -224,7 +233,7 @@
             <!-- Page Title & Icon Header -->
             <div id="doc-header-area" class="mb-8 border-b border-notion-border pb-6">
                 <div id="doc-icon-container" class="mb-4"></div>
-                <h1 id="doc-title" class="text-3xl md:text-5xl font-bold outline-none text-white transition-colors" placeholder="Ketik Judul Materi..."></h1>
+                <h1 id="doc-title" class="text-3xl md:text-5xl font-bold outline-none text-white transition-colors" placeholder="Ketik Judul Materi..." oninput="autoSaveCurrentPage()" onblur="autoSaveCurrentPage()"></h1>
             </div>
 
             <!-- DYNAMIC BLOCKS CONTAINER -->
@@ -235,7 +244,7 @@
             <!-- Save Button for Admin -->
             <div id="doc-admin-actions" class="fixed bottom-8 right-8 hidden z-50">
                 <button id="save-doc-btn" class="bg-white text-black px-5 py-2.5 rounded-lg shadow-xl font-medium hover:bg-neutral-200 transition-colors flex items-center gap-2 text-sm">
-                    💾 Simpan Materi
+                    💾 Simpan Manual
                 </button>
             </div>
         </div>
@@ -392,8 +401,9 @@
         let editingItemId = null;
         let deletingItemId = null;
         let currentExportTab = 'all';
+        let saveTimeout = null;
 
-        // DATA MATERI (BERSIH UNTUK DIGUNAKAN DENGAN SUPABASE REAL)
+        // DATA MATERI
         let itemsData = [];
 
         // INLINE MARKDOWN PARSER (Mengubah *teks* atau **teks** menjadi Bold/Format Visual)
@@ -429,6 +439,51 @@
             setTimeout(() => {
                 toast.className = 'fixed top-4 right-4 z-50 px-4 py-2.5 rounded-lg shadow-2xl text-xs sm:text-sm font-medium transition-all duration-300 transform -translate-y-5 opacity-0 pointer-events-none flex items-center gap-2';
             }, 3000);
+        }
+
+        // AUTOMATIC REAL-TIME AUTO-SAVE TO SUPABASE
+        function autoSaveCurrentPage() {
+            if (!currentPageId || !isAdmin) return;
+
+            const syncEl = document.getElementById('loading-indicator');
+            if (syncEl) {
+                syncEl.classList.remove('hidden');
+                syncEl.innerHTML = '<span class="animate-spin">⏳</span> Menyimpan...';
+            }
+
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(async () => {
+                const page = itemsData.find(i => i.id === currentPageId);
+                if (!page) return;
+
+                const docTitleEl = document.getElementById('doc-title');
+                if (docTitleEl) page.name = docTitleEl.innerText;
+                page.updated_at = new Date().toISOString();
+
+                if (supabaseClient) {
+                    try {
+                        const { error } = await supabaseClient.from('items').update({
+                            name: page.name,
+                            blocks: page.blocks,
+                            updated_at: page.updated_at
+                        }).eq('id', page.id);
+
+                        if (error) throw error;
+
+                        if (syncEl) {
+                            syncEl.innerHTML = '<span>✅</span> Tersimpan';
+                            setTimeout(() => syncEl.classList.add('hidden'), 2000);
+                        }
+                    } catch (err) {
+                        console.error('Auto-save error:', err);
+                        if (syncEl) {
+                            syncEl.innerHTML = '<span class="text-red-400">⚠️ Gagal Simpan</span>';
+                        }
+                    }
+                } else {
+                    if (syncEl) syncEl.classList.add('hidden');
+                }
+            }, 800);
         }
 
         // INITIAL LOAD & DATA SYNC FROM SUPABASE
@@ -618,11 +673,13 @@
             wrapper.dataset.index = index;
 
             let blockContent = '';
+            const contentStr = block.content || '';
+            const renderedHtml = formatMarkdown(contentStr);
 
             if (block.type === 'heading') {
-                blockContent = `<h2 class="text-xl md:text-2xl font-bold text-white outline-none border-b border-transparent focus:border-neutral-700 py-1" ${isAdmin ? 'contenteditable="true"' : ''} onblur="updateBlockContent(${index}, this.innerHTML)">${formatMarkdown(block.content || '')}</h2>`;
+                blockContent = `<h2 class="text-xl md:text-2xl font-bold text-white outline-none border-b border-transparent focus:border-neutral-700 py-1" ${isAdmin ? 'contenteditable="true"' : ''} placeholder="Ketik judul..." onblur="updateBlockContent(${index}, this.innerText)">${renderedHtml}</h2>`;
             } else if (block.type === 'paragraph') {
-                blockContent = `<p class="text-sm md:text-base text-neutral-300 leading-relaxed outline-none border-b border-transparent focus:border-neutral-700 py-1" ${isAdmin ? 'contenteditable="true"' : ''} onblur="updateBlockContent(${index}, this.innerHTML)">${formatMarkdown(block.content || '')}</p>`;
+                blockContent = `<p class="text-sm md:text-base text-neutral-300 leading-relaxed outline-none border-b border-transparent focus:border-neutral-700 py-1" ${isAdmin ? 'contenteditable="true"' : ''} placeholder="Ketik teks materi..." onblur="updateBlockContent(${index}, this.innerText)">${renderedHtml}</p>`;
             } else if (block.type === 'callout') {
                 const variant = block.variant || 'warning';
                 let variantStyle = 'bg-yellow-950/20 border-yellow-600/50 text-yellow-200/90';
@@ -654,7 +711,7 @@
                         ` : ''}
                         <div class="flex items-start gap-3">
                             <span class="text-xl shrink-0 select-none">${icon}</span>
-                            <div class="text-sm leading-relaxed outline-none flex-1 py-0.5" ${isAdmin ? 'contenteditable="true"' : ''} onblur="updateBlockContent(${index}, this.innerHTML)">${formatMarkdown(block.content || '')}</div>
+                            <div class="text-sm leading-relaxed outline-none flex-1 py-0.5" ${isAdmin ? 'contenteditable="true"' : ''} placeholder="Ketik penjelasan..." onblur="updateBlockContent(${index}, this.innerText)">${renderedHtml}</div>
                         </div>
                     </div>
                 `;
@@ -684,9 +741,9 @@
                         </div>
                         
                         ${isAdmin ? `
-                            <textarea onblur="updateBlockContent(${index}, this.value)" class="w-full bg-[#121212] text-neutral-200 p-4 font-mono text-xs sm:text-sm focus:outline-none min-h-[100px] resize-y code-font whitespace-pre-wrap">${block.content || ''}</textarea>
+                            <textarea placeholder="// Ketik kode di sini..." onblur="updateBlockContent(${index}, this.value)" class="w-full bg-[#121212] text-neutral-200 p-4 font-mono text-xs sm:text-sm focus:outline-none min-h-[100px] resize-y code-font whitespace-pre-wrap">${contentStr}</textarea>
                         ` : `
-                            <pre class="p-4 m-0 language-${lang}"><code class="language-${lang}">${escapeHtml(block.content || '')}</code></pre>
+                            <pre class="p-4 m-0 language-${lang}"><code class="language-${lang}">${escapeHtml(contentStr)}</code></pre>
                         `}
                     </div>
                 `;
@@ -694,38 +751,38 @@
                 blockContent = `
                     <div class="flex items-start gap-3 pl-2">
                         <span class="text-yellow-500 font-bold text-base select-none shrink-0">•</span>
-                        <div class="text-sm md:text-base text-neutral-300 outline-none flex-1 py-0.5" ${isAdmin ? 'contenteditable="true"' : ''} onblur="updateBlockContent(${index}, this.innerHTML)">${formatMarkdown(block.content || '')}</div>
+                        <div class="text-sm md:text-base text-neutral-300 outline-none flex-1 py-0.5" ${isAdmin ? 'contenteditable="true"' : ''} placeholder="Ketik poin..." onblur="updateBlockContent(${index}, this.innerText)">${renderedHtml}</div>
                     </div>
                 `;
             } else if (block.type === 'numbered') {
                 blockContent = `
                     <div class="flex items-start gap-2.5 pl-1">
                         <span class="text-neutral-500 font-medium text-sm code-font select-none shrink-0 min-w-[20px] text-right">${index + 1}.</span>
-                        <div class="text-sm md:text-base text-neutral-300 outline-none flex-1 py-0.5" ${isAdmin ? 'contenteditable="true"' : ''} onblur="updateBlockContent(${index}, this.innerHTML)">${formatMarkdown(block.content || '')}</div>
+                        <div class="text-sm md:text-base text-neutral-300 outline-none flex-1 py-0.5" ${isAdmin ? 'contenteditable="true"' : ''} placeholder="Ketik poin..." onblur="updateBlockContent(${index}, this.innerText)">${renderedHtml}</div>
                     </div>
                 `;
             } else if (block.type === 'image') {
                 blockContent = `
                     <div class="flex flex-col gap-2">
                         <div class="rounded-xl overflow-hidden border border-neutral-800 max-w-full bg-neutral-900 flex justify-center items-center">
-                            <img src="${block.content || 'https://placehold.co/800x400/202020/eab308?text=Image+Placeholder'}" alt="Materi" class="max-w-full h-auto object-contain max-h-[450px]" onerror="this.src='https://placehold.co/800x400/202020/eab308?text=Gambar+Gagal+Dimuat'">
+                            <img src="${contentStr || 'https://placehold.co/800x400/202020/eab308?text=Image+Placeholder'}" alt="Materi" class="max-w-full h-auto object-contain max-h-[450px]" onerror="this.src='https://placehold.co/800x400/202020/eab308?text=Gambar+Gagal+Dimuat'">
                         </div>
                         ${isAdmin ? `
-                            <input type="text" value="${block.content || ''}" placeholder="Masukkan URL Gambar..." onblur="updateBlockContent(${index}, this.value)" class="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-xs text-neutral-300 focus:outline-none">
+                            <input type="text" value="${contentStr}" placeholder="Masukkan URL Gambar (https://...)..." onblur="updateBlockContent(${index}, this.value)" class="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-xs text-neutral-300 focus:outline-none">
                         ` : ''}
                     </div>
                 `;
             } else if (block.type === 'link') {
-                const parts = (block.content || '').split('|');
+                const parts = contentStr.split('|');
                 const url = parts[0] || '#';
                 const label = parts[1] || url;
                 blockContent = `
                     <div class="flex flex-col gap-2">
                         <a href="${url}" target="_blank" rel="noopener noreferrer" class="p-3.5 rounded-xl border border-neutral-800 bg-neutral-900/60 hover:bg-neutral-800 text-yellow-400 hover:text-yellow-300 transition-colors flex items-center gap-2.5 text-sm font-medium w-full">
-                            <span>🔗</span> <span class="underline truncate">${label}</span>
+                            <span>🔗</span> <span class="underline truncate">${label || 'Buka Tautan'}</span>
                         </a>
                         ${isAdmin ? `
-                            <input type="text" value="${block.content || ''}" placeholder="Format: URL|Label Tautan..." onblur="updateBlockContent(${index}, this.value)" class="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-xs text-neutral-300 focus:outline-none">
+                            <input type="text" value="${contentStr}" placeholder="Format: https://link.com|Label Tautan..." onblur="updateBlockContent(${index}, this.value)" class="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-xs text-neutral-300 focus:outline-none">
                         ` : ''}
                     </div>
                 `;
@@ -750,7 +807,9 @@
         function updateBlockContent(index, newContent) {
             const page = itemsData.find(i => i.id === currentPageId);
             if (page && page.blocks && page.blocks[index]) {
-                page.blocks[index].content = newContent;
+                const cleanText = newContent ? newContent.replace(/<br\s*[\/]?>/gi, "").trim() : "";
+                page.blocks[index].content = cleanText;
+                autoSaveCurrentPage();
             }
         }
 
@@ -759,6 +818,7 @@
             if (page && page.blocks && page.blocks[index]) {
                 page.blocks[index].variant = variant;
                 renderDocumentView();
+                autoSaveCurrentPage();
             }
         }
 
@@ -767,6 +827,7 @@
             if (page && page.blocks && page.blocks[index]) {
                 page.blocks[index].language = language;
                 renderDocumentView();
+                autoSaveCurrentPage();
             }
         }
 
@@ -790,7 +851,7 @@
             const newBlock = {
                 id: 'b_' + Date.now(),
                 type: type,
-                content: type === 'code' ? '# Tulis kode Anda di sini' : 'Teks baru...'
+                content: '' // Sengaja dibuat kosong agar Teks Bayangan (Placeholder) muncul
             };
 
             if (type === 'callout') newBlock.variant = 'warning';
@@ -799,6 +860,7 @@
             page.blocks.push(newBlock);
             renderDocumentView();
             document.getElementById('block-dropdown').classList.add('hidden');
+            autoSaveCurrentPage();
         }
 
         function removeBlock(index) {
@@ -806,6 +868,7 @@
             if (page && page.blocks) {
                 page.blocks.splice(index, 1);
                 renderDocumentView();
+                autoSaveCurrentPage();
             }
         }
 
@@ -1058,14 +1121,19 @@
             item.updated_at = new Date().toISOString();
 
             if (supabaseClient) {
-                await supabaseClient.from('items').update({
+                const { error } = await supabaseClient.from('items').update({
                     icon: item.icon,
                     name: item.name,
                     updated_at: item.updated_at
                 }).eq('id', item.id);
+
+                if (error) {
+                    showToast('Gagal update di Supabase: ' + error.message, true);
+                } else {
+                    showToast('Detail item berhasil diperbarui');
+                }
             }
 
-            showToast('Detail item berhasil diperbarui');
             closeEditModal();
             renderCurrentView();
         });
@@ -1091,18 +1159,23 @@
 
         confirmDeleteBtn?.addEventListener('click', async () => {
             if (!deletingItemId) return;
+            const idToDelete = deletingItemId;
 
             if (supabaseClient) {
-                await supabaseClient.from('items').delete().eq('id', deletingItemId);
+                const { error } = await supabaseClient.from('items').delete().eq('id', idToDelete);
+                if (error) {
+                    showToast('Gagal menghapus dari Supabase: ' + error.message, true);
+                } else {
+                    showToast('Item berhasil dihapus');
+                }
             }
 
-            itemsData = itemsData.filter(i => i.id !== deletingItemId && i.parent_id !== deletingItemId);
-            showToast('Item berhasil dihapus');
+            itemsData = itemsData.filter(i => i.id !== idToDelete && i.parent_id !== idToDelete);
             closeDeleteModal();
             renderCurrentView();
         });
 
-        // ADD ITEM MODAL HANDLERS
+        // ADD ITEM MODAL HANDLERS WITH VALID UUID GENERATION
         const addModal = document.getElementById('add-modal');
         const addItemBtn = document.getElementById('add-item-btn');
         const cancelAddBtn = document.getElementById('cancel-add-btn');
@@ -1125,43 +1198,39 @@
             const icon = document.getElementById('add-item-icon').value || (type === 'folder' ? '📁' : '📄');
             const name = document.getElementById('add-item-name').value || 'Item Baru';
 
+            // Generate valid UUID v4 string for Supabase compatibility
+            const newUuid = crypto.randomUUID ? crypto.randomUUID() : '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, c =>
+                (+c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> +c / 4).toString(16)
+            );
+
             const newItem = {
-                id: 'item_' + Date.now(),
-                parent_id: currentFolderId,
+                id: newUuid,
+                parent_id: currentFolderId || null,
                 type: type,
                 icon: icon,
                 name: name,
-                blocks: type === 'page' ? [] : null,
+                blocks: type === 'page' ? [] : [],
                 updated_at: new Date().toISOString()
             };
 
-            if (supabaseClient) {
-                await supabaseClient.from('items').insert([newItem]);
-            }
-
             itemsData.push(newItem);
-            showToast('Item baru berhasil dibuat');
-            closeAddModal();
             renderCurrentView();
+            closeAddModal();
+
+            if (supabaseClient) {
+                const { error } = await supabaseClient.from('items').insert([newItem]);
+                if (error) {
+                    showToast('Gagal simpan ke Supabase: ' + error.message, true);
+                    console.error('Insert error:', error);
+                } else {
+                    showToast('Item baru berhasil dibuat & tersimpan!');
+                }
+            }
         });
 
-        // SAVE DOCUMENT BUTTON (ADMIN)
-        document.getElementById('save-doc-btn')?.addEventListener('click', async () => {
-            if (!currentPageId) return;
-            const page = itemsData.find(i => i.id === currentPageId);
-            if (!page) return;
-
-            page.name = document.getElementById('doc-title').innerText;
-            page.updated_at = new Date().toISOString();
-
-            if (supabaseClient) {
-                await supabaseClient.from('items').update({
-                    name: page.name,
-                    blocks: page.blocks,
-                    updated_at: page.updated_at
-                }).eq('id', page.id);
-            }
-
+        // SAVE DOCUMENT BUTTON MANUAL (ADMIN)
+        document.getElementById('save-doc-btn')?.addEventListener('click', () => {
+            autoSaveCurrentPage();
             showToast('Materi berhasil disimpan!');
             renderBreadcrumb();
         });
