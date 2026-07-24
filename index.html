@@ -147,7 +147,7 @@
                     <!-- Expanded Search Input Box -->
                     <div id="search-input-box" class="hidden relative w-full animate-fade-in">
                         <span class="absolute left-3 top-2.5 text-neutral-400 text-sm">🔍</span>
-                        <input type="text" id="global-search-input" placeholder="Ketik untuk mencari judul (contoh: pyt)..." class="w-full pl-9 pr-10 py-2 bg-neutral-900 border border-neutral-700 rounded-lg text-white text-sm focus:outline-none focus:border-neutral-500 shadow-inner">
+                        <input type="text" id="global-search-input" placeholder="Ketik untuk mencari judul..." class="w-full pl-9 pr-10 py-2 bg-neutral-900 border border-neutral-700 rounded-lg text-white text-sm focus:outline-none focus:border-neutral-500 shadow-inner">
                         <button id="close-search-btn" class="absolute right-3 top-2.5 text-neutral-400 hover:text-white text-xs px-1.5 py-0.5 rounded bg-neutral-800">✕</button>
                         <!-- Suggestions Dropdown -->
                         <div id="search-suggestions" class="hidden absolute left-0 right-0 mt-2 bg-[#202020] border border-notion-border rounded-lg shadow-2xl max-h-60 overflow-y-auto z-50 animate-fade-in"></div>
@@ -370,11 +370,11 @@
 
     <script>
         // ==============================================================================
-        // SUPABASE CONFIGURATION
+        // SUPABASE CONFIGURATION (GANTI DENGAN KUNCI SUPABASE ASLI ANDA)
         // ==============================================================================
         const SUPABASE_URL = 'https://gyqginfwcmyzucqatswd.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_JMr4CWa0_KUgQvZHsHzkvA_0lc4hi_C';
-        const SUPABASE_ADMIN_EMAIL = 'hasansyaifulhuda24@gmail.com'; 
+        const SUPABASE_ADMIN_EMAIL = 'hasansyaifulhuda24@gmail.com'; // Sesuaikan dengan email Admin di Supabase Auth Anda
 
         let supabaseClient = null;
         if (SUPABASE_URL.startsWith('https://') && !SUPABASE_URL.includes('AKUN_SUPABASE_ANDA')) {
@@ -393,40 +393,8 @@
         let deletingItemId = null;
         let currentExportTab = 'all';
 
-        // MOCK DATA AWAL (Gunakan jika belum terhubung ke Supabase)
-        let itemsData = [
-            {
-                id: 'f1',
-                parent_id: null,
-                type: 'folder',
-                icon: '🐍',
-                name: 'Python',
-                updated_at: new Date().toISOString()
-            },
-            {
-                id: 'p1',
-                parent_id: 'f1',
-                type: 'page',
-                icon: '📄',
-                name: 'Pengenalan Python',
-                updated_at: new Date().toISOString(),
-                blocks: [
-                    { id: 'b1', type: 'heading', content: 'Pengenalan Bahasa Python' },
-                    { id: 'b2', type: 'paragraph', content: 'Python adalah bahasa pemrograman *interpretatif* tingkat tinggi yang banyak digunakan untuk *pengembangan web*, *data science*, dan *otomasi*.' },
-                    { id: 'b3_warn', type: 'callout', variant: 'warning', content: 'Catatan penting: Sintaksis Python sangat bersih dan mengutamakan keterbacaan kode!' },
-                    { id: 'b3_info', type: 'callout', variant: 'info', content: 'Informasi tambahan: Python diciptakan oleh Guido van Rossum pada tahun 1991.' },
-                    { id: 'b4', type: 'heading', content: 'Contoh Kode Pertama' },
-                    { id: 'b5', type: 'code', language: 'python', content: '# Contoh program sederhana Python dengan baris kode yang otomatis tertata rapi\nname = "Siswa"\nprint(f"Selamat belajar, {name}!")' },
-                    { id: 'b6', type: 'heading', content: 'Keunggulan Utama Python' },
-                    { id: 'b7', type: 'bullet', content: 'Bahasa pemrograman yang mudah dipelajari oleh pemula.' },
-                    { id: 'b8', type: 'bullet', content: 'Mendukung berbagai paradigma pemrograman seperti *OOP* dan fungsional.' },
-                    { id: 'b9', type: 'numbered', content: 'Instal Python di komputer Anda.' },
-                    { id: 'b10', type: 'numbered', content: 'Tulis kode pertama Anda menggunakan *code editor*.' },
-                    { id: 'b11', type: 'image', content: 'https://placehold.co/800x400/202020/eab308?text=Ilustrasi+Python' },
-                    { id: 'b12', type: 'link', content: 'https://www.python.org/|🔗 Kunjungi Website Resmi Python & Download' }
-                ]
-            }
-        ];
+        // DATA MATERI (BERSIH / KOSONG UNTUK DIGUNAKAN DENGAN SUPABASE REAL)
+        let itemsData = [];
 
         // UI TOAST NOTIFICATION HELPER
         function showToast(message, isError = false) {
@@ -445,7 +413,7 @@
             }, 3000);
         }
 
-        // INITIAL LOAD & DATA SYNC
+        // INITIAL LOAD & DATA SYNC FROM SUPABASE
         async function fetchItemsFromSupabase() {
             if (!supabaseClient) return;
             const syncEl = document.getElementById('loading-indicator');
@@ -454,11 +422,11 @@
             try {
                 const { data, error } = await supabaseClient.from('items').select('*');
                 if (error) throw error;
-                if (data && data.length > 0) {
+                if (data) {
                     itemsData = data;
                 }
             } catch (err) {
-                console.warn('Menggunakan data lokal fallback:', err.message);
+                console.warn('Gagal mengambil data dari Supabase:', err.message);
             } finally {
                 syncEl?.classList.add('hidden');
                 renderBreadcrumb();
@@ -919,6 +887,10 @@
         function renderJsonSelectionList() {
             jsonSelectionList.innerHTML = '';
             const pages = itemsData.filter(i => i.type === 'page');
+            if (pages.length === 0) {
+                jsonSelectionList.innerHTML = `<div class="text-xs text-neutral-500 py-2">Belum ada file materi.</div>`;
+                return;
+            }
             pages.forEach(page => {
                 const label = document.createElement('label');
                 label.className = 'flex items-center gap-2 text-xs text-neutral-300 hover:text-white cursor-pointer bg-neutral-900 p-2 rounded border border-neutral-800';
@@ -937,7 +909,11 @@
                 exportData = itemsData.filter(item => checkedIds.includes(item.id));
             }
 
-            // Create JSON blob with clean dividers
+            if (exportData.length === 0) {
+                showToast('Pilih minimal satu item untuk di-export!', true);
+                return;
+            }
+
             const jsonString = JSON.stringify(exportData, null, 2);
             const blob = new Blob([jsonString], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
@@ -992,7 +968,7 @@
                     });
                     if (error) throw error;
                     isAdmin = true;
-                    showToast('Login berhasil!');
+                    showToast('Login berhasil via Supabase Auth!');
                     closeLoginModal();
                     renderCurrentView();
                 } catch (err) {
@@ -1180,7 +1156,6 @@
         // INITIALIZE ON LOAD
         window.addEventListener('DOMContentLoaded', async () => {
             if (supabaseClient) {
-                // Cek status sesi login Supabase secara otomatis saat halaman dimuat
                 try {
                     const { data: { session } } = await supabaseClient.auth.getSession();
                     if (session) {
