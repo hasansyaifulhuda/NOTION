@@ -232,12 +232,6 @@
                 </div>
             </div>
 
-            <!-- Page Title & Icon Header -->
-            <div id="doc-header-area" class="mb-8 border-b border-notion-border pb-6">
-                <div id="doc-icon-container" class="mb-4"></div>
-                <h1 id="doc-title" class="text-3xl md:text-5xl font-bold outline-none text-white transition-colors" placeholder="Ketik Judul Materi..." oninput="autoSaveCurrentPage()" onblur="autoSaveCurrentPage()"></h1>
-            </div>
-
             <!-- DYNAMIC BLOCKS CONTAINER -->
             <div id="blocks-container" class="flex flex-col gap-6 min-h-[40vh]">
                 <!-- Rendered blocks go here -->
@@ -432,7 +426,7 @@
                 }
                 return url;
             }
-            return url;
+            return '';
         }
 
         // ICON RENDERER HELPER (Mendukung Emoji Teks maupun Gambar URL / Google Drive)
@@ -440,10 +434,16 @@
             if (!iconStr) return `<span class="shrink-0 inline-block align-middle">${defaultEmoji}</span>`;
             
             const imageUrl = formatImageUrl(iconStr);
-            if (imageUrl && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://') || imageUrl.startsWith('data:image'))) {
+            if (imageUrl) {
                 // object-contain digunakan agar gambar transparan tidak terpotong atau memiliki background putih
                 return `<img src="${imageUrl}" alt="Icon" class="${sizeClasses} object-contain shrink-0 inline-block align-middle drop-shadow-md" onerror="this.onerror=null; this.src='https://placehold.co/40x40/202020/eab308?text=IMG';">`;
             }
+
+            // Jika input berbentuk URL tetapi gagal diproses, JANGAN tampilkan teks URL-nya sebagai string
+            if (iconStr.startsWith('http://') || iconStr.startsWith('https://')) {
+                return `<span class="shrink-0 inline-block align-middle">${defaultEmoji}</span>`;
+            }
+
             return `<span class="shrink-0 inline-block align-middle">${iconStr || defaultEmoji}</span>`;
         }
 
@@ -693,12 +693,6 @@
             const page = itemsData.find(i => i.id === currentPageId);
             if (!page) return;
 
-            document.getElementById('doc-icon-container').innerHTML = `<span class="text-4xl md:text-5xl">${page.icon || '📄'}</span>`;
-            
-            const titleEl = document.getElementById('doc-title');
-            titleEl.innerText = page.name;
-            titleEl.contentEditable = isAdmin;
-
             const blocksContainer = document.getElementById('blocks-container');
             blocksContainer.innerHTML = '';
 
@@ -708,7 +702,6 @@
                 blocksContainer.appendChild(blockEl);
             });
 
-            // Re-highlight code blocks via PrismJS
             setTimeout(() => {
                 if (window.Prism) Prism.highlightAll();
             }, 50);
@@ -802,9 +795,10 @@
                     </div>
                 `;
             } else if (block.type === 'numbered') {
+                const numPrefix = block.numberPrefix !== undefined ? block.numberPrefix : `${index + 1}.`;
                 blockContent = `
                     <div class="flex items-start gap-2.5 pl-1">
-                        <span class="text-neutral-500 font-medium text-sm code-font select-none shrink-0 min-w-[20px] text-right">${index + 1}.</span>
+                        <span class="text-neutral-400 hover:text-yellow-400 font-medium text-sm code-font shrink-0 min-w-[20px] text-right outline-none focus:text-yellow-400 transition-colors border-b border-transparent focus:border-yellow-500" ${isAdmin ? 'contenteditable="true"' : ''} onblur="updateBlockNumberPrefix(${index}, this.innerText)" title="Klik untuk mengedit nomor/prefix">${numPrefix}</span>
                         <div class="text-sm md:text-base text-neutral-300 outline-none flex-1 py-0.5" ${isAdmin ? 'contenteditable="true"' : ''} placeholder="Ketik poin..." onblur="updateBlockContent(${index}, this.innerText)">${renderedHtml}</div>
                     </div>
                 `;
@@ -861,6 +855,15 @@
             }
         }
 
+        // FUNGSI UNTUK MENGUPDATE AWALAN NOMOR PADA POIN NUMBERED
+        function updateBlockNumberPrefix(index, newPrefix) {
+            const page = itemsData.find(i => i.id === currentPageId);
+            if (page && page.blocks && page.blocks[index]) {
+                page.blocks[index].numberPrefix = newPrefix ? newPrefix.trim() : '';
+                autoSaveCurrentPage();
+            }
+        }
+
         function updateCalloutVariant(index, variant) {
             const page = itemsData.find(i => i.id === currentPageId);
             if (page && page.blocks && page.blocks[index]) {
@@ -899,11 +902,15 @@
             const newBlock = {
                 id: 'b_' + Date.now(),
                 type: type,
-                content: '' // Sengaja dibuat kosong agar Teks Bayangan (Placeholder) muncul
+                content: ''
             };
 
             if (type === 'callout') newBlock.variant = 'warning';
             if (type === 'code') newBlock.language = 'python';
+            if (type === 'numbered') {
+                const numberedCount = page.blocks.filter(b => b.type === 'numbered').length;
+                newBlock.numberPrefix = `${numberedCount + 1}.`;
+            }
 
             page.blocks.push(newBlock);
             renderDocumentView();
@@ -956,7 +963,8 @@
                 results.forEach(res => {
                     const itemDiv = document.createElement('div');
                     itemDiv.className = 'px-4 py-2.5 hover:bg-neutral-800 cursor-pointer flex items-center gap-2.5 text-xs text-neutral-200 hover:text-white border-b border-neutral-800/50 last:border-0';
-                    itemDiv.innerHTML = `<span>${res.icon || (res.type === 'folder' ? '📁' : '📄')}</span><span>${res.name}</span>`;
+                    const iconHtml = renderIconHtml(res.icon, res.type === 'folder' ? '📁' : '📄', 'w-4 h-4 text-xs');
+                    itemDiv.innerHTML = `${iconHtml}<span class="truncate">${res.name}</span>`;
                     itemDiv.onclick = () => {
                         if (res.type === 'folder') navigateToFolder(res.id);
                         else navigateToPage(res.id);
