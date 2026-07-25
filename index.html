@@ -616,12 +616,10 @@
 
                 const btn = document.createElement('button');
                 const isCurrent = item.id === (currentPageId || currentFolderId);
-                btn.className = `transition-transform hover:scale-110 flex items-center gap-1 font-medium ${isCurrent ? 'text-white' : 'hover:text-white'}`;
+                btn.className = `transition-colors flex items-center gap-1.5 font-medium ${isCurrent ? 'text-white' : 'hover:text-white'}`;
                 
-                // HANYA menampilkan logo/ikon di bagian breadcrumb atas agar rapi
-                const iconHtml = renderIconHtml(item.icon, item.type === 'folder' ? '📁' : '📄', 'w-6 h-6 text-lg');
-                btn.innerHTML = iconHtml;
-                btn.title = item.name; // Memunculkan judul tulisan ketika logo di hover dengan mouse
+                const iconHtml = renderIconHtml(item.icon, item.type === 'folder' ? '📁' : '📄', 'w-4 h-4 text-sm');
+                btn.innerHTML = `${iconHtml}<span class="truncate max-w-[120px] sm:max-w-[200px]">${item.name}</span>`;
 
                 btn.onclick = () => {
                     if (item.type === 'folder') navigateToFolder(item.id);
