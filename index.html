@@ -171,12 +171,14 @@
             
             <!-- Items Table -->
             <div class="w-full">
-                <table class="w-full text-left border-collapse">
+                <!-- Tambahan class table-fixed di sini -->
+                <table class="w-full text-left border-collapse table-fixed">
                     <thead>
                         <tr class="border-b border-notion-border text-neutral-400 text-xs sm:text-sm">
                             <th class="py-3 font-normal">Judul</th>
-                            <th class="py-3 font-normal text-right sm:w-48 whitespace-nowrap">terakhir di update</th>
-                            <th class="py-3 font-normal w-20 admin-col hidden text-right">Aksi</th>
+                            <!-- Tambahan batas lebar kolom di sini -->
+                            <th class="py-3 font-normal text-right w-28 sm:w-48 whitespace-nowrap">terakhir di update</th>
+                            <th class="py-3 font-normal w-16 sm:w-20 admin-col hidden text-right">Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="table-body">
@@ -406,7 +408,46 @@
         // DATA MATERI
         let itemsData = [];
 
-        // INLINE MARKDOWN PARSER (Mengubah *teks* atau **teks** menjadi Bold/Format Visual)
+        // HELPER SPREAD IMAGE URL & GOOGLE DRIVE CONVERTER
+        function formatImageUrl(str) {
+            if (!str) return '';
+            let url = str.trim();
+            if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:image')) {
+                // Deteksi dan Konversi Otomatis Semua Jenis Link Google Drive
+                if (url.includes('drive.google.com') || url.includes('docs.google.com')) {
+                    let fileId = null;
+                    const matchD = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                    if (matchD && matchD[1]) {
+                        fileId = matchD[1];
+                    } else {
+                        const matchId = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+                        if (matchId && matchId[1]) {
+                            fileId = matchId[1];
+                        }
+                    }
+                    if (fileId) {
+                        // Gunakan endpoint lh3.googleusercontent.com agar bypass CORS browser strict (spt Brave) & tetap transparan
+                        return `https://lh3.googleusercontent.com/d/${fileId}`;
+                    }
+                }
+                return url;
+            }
+            return url;
+        }
+
+        // ICON RENDERER HELPER (Mendukung Emoji Teks maupun Gambar URL / Google Drive)
+        function renderIconHtml(iconStr, defaultEmoji = '📄', sizeClasses = 'w-5 h-5') {
+            if (!iconStr) return `<span class="shrink-0 inline-block align-middle">${defaultEmoji}</span>`;
+            
+            const imageUrl = formatImageUrl(iconStr);
+            if (imageUrl && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://') || imageUrl.startsWith('data:image'))) {
+                // object-contain digunakan agar gambar transparan tidak terpotong atau memiliki background putih
+                return `<img src="${imageUrl}" alt="Icon" class="${sizeClasses} object-contain shrink-0 inline-block align-middle drop-shadow-md" onerror="this.onerror=null; this.src='https://placehold.co/40x40/202020/eab308?text=IMG';">`;
+            }
+            return `<span class="shrink-0 inline-block align-middle">${iconStr || defaultEmoji}</span>`;
+        }
+
+        // INLINE MARKDOWN PARSER
         function formatMarkdown(str) {
             if (!str) return '';
             let formatted = str;
@@ -575,8 +616,13 @@
 
                 const btn = document.createElement('button');
                 const isCurrent = item.id === (currentPageId || currentFolderId);
-                btn.className = `transition-colors flex items-center gap-1 font-medium ${isCurrent ? 'text-white' : 'hover:text-white'}`;
-                btn.innerHTML = `<span>${item.icon || '📄'}</span><span>${item.name}</span>`;
+                btn.className = `transition-transform hover:scale-110 flex items-center gap-1 font-medium ${isCurrent ? 'text-white' : 'hover:text-white'}`;
+                
+                // HANYA menampilkan logo/ikon di bagian breadcrumb atas agar rapi
+                const iconHtml = renderIconHtml(item.icon, item.type === 'folder' ? '📁' : '📄', 'w-6 h-6 text-lg');
+                btn.innerHTML = iconHtml;
+                btn.title = item.name; // Memunculkan judul tulisan ketika logo di hover dengan mouse
+
                 btn.onclick = () => {
                     if (item.type === 'folder') navigateToFolder(item.id);
                     else navigateToPage(item.id);
@@ -609,14 +655,17 @@
                         minute: '2-digit'
                     });
 
+                    const defaultEmoji = item.type === 'folder' ? '📁' : '📄';
+                    const iconHtml = renderIconHtml(item.icon, defaultEmoji, 'w-5 h-5 text-base');
+
                     tr.innerHTML = `
-                        <td class="py-3 pr-2 font-medium text-neutral-200 group-hover:text-white">
-                            <div class="flex items-center gap-2">
-                                <span class="text-base shrink-0">${item.icon || (item.type === 'folder' ? '📁' : '📄')}</span>
-                                <span class="truncate max-w-[180px] sm:max-w-md">${item.name}</span>
+                        <td class="py-3 pr-2 font-medium text-neutral-200 group-hover:text-white overflow-hidden">
+                            <div class="flex items-center gap-2 overflow-hidden">
+                                ${iconHtml}
+                                <span class="truncate block">${item.name}</span>
                             </div>
                         </td>
-                        <td class="py-3 text-right text-neutral-400 text-[11px] sm:text-xs whitespace-nowrap">
+                        <td class="py-3 text-right text-neutral-400 text-[11px] sm:text-xs whitespace-nowrap truncate">
                             ${formattedDate}
                         </td>
                         <td class="py-3 text-right admin-col ${isAdmin ? '' : 'hidden'}">
@@ -762,13 +811,14 @@
                     </div>
                 `;
             } else if (block.type === 'image') {
+                const formattedImgUrl = formatImageUrl(contentStr);
                 blockContent = `
                     <div class="flex flex-col gap-2">
-                        <div class="rounded-xl overflow-hidden border border-neutral-800 max-w-full bg-neutral-900 flex justify-center items-center">
-                            <img src="${contentStr || 'https://placehold.co/800x400/202020/eab308?text=Image+Placeholder'}" alt="Materi" class="max-w-full h-auto object-contain max-h-[450px]" onerror="this.src='https://placehold.co/800x400/202020/eab308?text=Gambar+Gagal+Dimuat'">
+                        <div class="rounded-xl overflow-hidden border border-neutral-800 max-w-full bg-neutral-900 flex justify-center items-center min-h-[120px]">
+                            <img src="${formattedImgUrl || 'https://placehold.co/800x400/202020/eab308?text=Image+Placeholder'}" alt="Materi" class="max-w-full h-auto object-contain max-h-[450px]" onerror="this.src='https://placehold.co/800x400/202020/eab308?text=IMG+Error'">
                         </div>
                         ${isAdmin ? `
-                            <input type="text" value="${contentStr}" placeholder="Masukkan URL Gambar (https://...)..." onblur="updateBlockContent(${index}, this.value)" class="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-xs text-neutral-300 focus:outline-none">
+                            <input type="text" value="${contentStr}" placeholder="Masukkan URL Gambar atau Link Google Drive..." onblur="updateBlockContent(${index}, this.value)" class="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-xs text-neutral-300 focus:outline-none">
                         ` : ''}
                     </div>
                 `;
