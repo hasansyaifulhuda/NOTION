@@ -487,6 +487,9 @@
             if (!str) return '';
             let formatted = str;
             
+            // Escape karakter HTML (< dan >) terlebih dahulu agar tag seperti <p> tidak hilang/dianggap tag HTML oleh browser
+            formatted = formatted.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
             // Format ganti baris (\n menjadi <br>) agar tatanan dari JSON tetap rapi
             formatted = formatted.replace(/\n/g, '<br>');
 
