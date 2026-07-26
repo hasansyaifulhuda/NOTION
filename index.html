@@ -71,7 +71,7 @@
             scroll-behavior: smooth;
         }
 
-        /* PLACEHOLDER STYLE UNTUK BLOK CONTENTEDITABLE (BAYANGAN TEKS) */
+        /* PLACEHOLDER STYLE UNTUK BLOK CONTENTEDITABLE */
         [contenteditable]:empty::before {
             content: attr(placeholder);
             color: #555555;
@@ -171,12 +171,10 @@
             
             <!-- Items Table -->
             <div class="w-full">
-                <!-- Tambahan class table-fixed di sini -->
                 <table class="w-full text-left border-collapse table-fixed">
                     <thead>
                         <tr class="border-b border-notion-border text-neutral-400 text-xs sm:text-sm">
                             <th class="py-3 font-normal">Judul</th>
-                            <!-- Tambahan batas lebar kolom di sini -->
                             <th class="py-3 font-normal text-right w-28 sm:w-48 whitespace-nowrap">terakhir di update</th>
                             <th class="py-3 font-normal w-16 sm:w-20 admin-col hidden text-right">Aksi</th>
                         </tr>
@@ -233,7 +231,7 @@
             </div>
 
             <!-- DYNAMIC BLOCKS CONTAINER -->
-            <div id="blocks-container" class="flex flex-col gap-6 min-h-[40vh]">
+            <div id="blocks-container" class="flex flex-col gap-6 min-h-[40vh] pt-4">
                 <!-- Rendered blocks go here -->
             </div>
             
@@ -246,12 +244,53 @@
         </div>
     </main>
 
-    <!-- ADMIN EXPORT JSON FLOATING BUBBLE BUTTON (BOTTOM LEFT) -->
+    <!-- ADMIN EXPORT JSON FLOATING BUBBLE BUTTON (FOLEDR VIEW ONLY) -->
     <div id="admin-export-bubble" class="fixed bottom-6 left-6 hidden z-40 animate-fade-in">
         <button id="open-export-json-modal" class="bg-neutral-800 hover:bg-neutral-700 text-yellow-400 border border-neutral-700 shadow-2xl px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all hover:scale-105 active:scale-95">
             <span class="text-base">📦</span>
             <span>Export JSON</span>
         </button>
+    </div>
+
+    <!-- ADMIN IMPORT JSON FLOATING BUBBLE BUTTON (DOCUMENT VIEW ONLY) -->
+    <div id="admin-import-bubble" class="fixed bottom-6 left-6 hidden z-40 animate-fade-in">
+        <button id="open-import-json-modal" class="bg-neutral-800 hover:bg-neutral-700 text-emerald-400 border border-neutral-700 shadow-2xl px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all hover:scale-105 active:scale-95">
+            <span class="text-base">📥</span>
+            <span>Import JSON</span>
+        </button>
+    </div>
+
+    <!-- MODAL IMPORT JSON (FOR GEMINI JSON) -->
+    <div id="json-import-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-[#202020] border border-notion-border p-6 rounded-xl w-[90%] max-w-[540px] shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col gap-4">
+            <div class="flex items-center justify-between border-b border-notion-border pb-3">
+                <h2 class="text-base font-semibold text-white flex items-center gap-2">
+                    <span>📥</span> Import Materi dari JSON
+                </h2>
+                <button id="close-import-modal-btn" class="text-neutral-400 hover:text-white text-sm">✕</button>
+            </div>
+
+            <div class="text-xs text-neutral-300 space-y-2">
+                <p>Tempelkan kode array JSON hasil rangkuman Gemini ke dalam kotak di bawah ini:</p>
+                <div class="relative">
+                    <textarea id="json-import-input" rows="8" placeholder='[\n  {\n    "type": "heading",\n    "content": "Judul Bab"\n  },\n  {\n    "type": "paragraph",\n    "content": "Isi materi..."\n  }\n]' class="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-xs font-mono text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-emerald-500 resize-y"></textarea>
+                </div>
+                <div class="flex items-center justify-between pt-1">
+                    <span class="text-[11px] text-neutral-500">Atau pilih file .json dari komputer:</span>
+                    <label class="cursor-pointer bg-neutral-800 hover:bg-neutral-700 text-neutral-300 px-2.5 py-1 rounded text-[11px] border border-neutral-700 transition-colors">
+                        📂 Upload File JSON
+                        <input type="file" id="json-import-file" accept=".json" class="hidden">
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2 border-t border-notion-border">
+                <button type="button" id="cancel-import-btn" class="px-4 py-2 text-xs text-neutral-300 hover:bg-neutral-800 rounded-lg transition-colors">Batal</button>
+                <button type="button" id="confirm-import-btn" class="px-4 py-2 text-xs bg-emerald-500 hover:bg-emerald-400 text-black font-semibold rounded-lg transition-colors flex items-center gap-1.5">
+                    <span>⚡</span> <span>Import & Simpan Ke Materi</span>
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- MODAL EXPORT JSON -->
@@ -300,7 +339,7 @@
             </h2>
             <div class="space-y-3 text-xs">
                 <div>
-                    <label class="block text-neutral-400 mb-1">Ikon (Emoji / Teks)</label>
+                    <label class="block text-neutral-400 mb-1">Ikon (Emoji / Teks / Link Gambar / Drive)</label>
                     <input type="text" id="edit-item-icon" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-yellow-500">
                 </div>
                 <div>
@@ -315,7 +354,7 @@
         </div>
     </div>
 
-    <!-- MODAL LOGIN (PASSWORD ONLY - CENTERED CAPS TITLE) -->
+    <!-- MODAL LOGIN -->
     <div id="login-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 opacity-0 pointer-events-none transition-opacity duration-300">
         <div class="bg-[#202020] border border-notion-border p-6 rounded-xl w-[90%] max-w-[360px] shadow-2xl transform scale-95 transition-transform duration-300">
             <h2 class="text-xl font-bold text-white mb-5 text-center tracking-widest uppercase">LOGIN</h2>
@@ -331,7 +370,7 @@
         </div>
     </div>
 
-    <!-- MODAL ADD ITEM (FOLDER / PAGE) -->
+    <!-- MODAL ADD ITEM -->
     <div id="add-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 opacity-0 pointer-events-none transition-opacity duration-300">
         <div class="bg-[#202020] border border-notion-border p-6 rounded-xl w-[90%] max-w-[400px] shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col gap-4">
             <h2 class="text-base font-semibold text-white">Tambah Item Baru</h2>
@@ -344,7 +383,7 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-neutral-400 mb-1">Ikon Emoji</label>
+                    <label class="block text-neutral-400 mb-1">Ikon Emoji / Link Gambar</label>
                     <input type="text" id="add-item-icon" value="📄" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-2.5 text-white focus:outline-none">
                 </div>
                 <div>
@@ -407,7 +446,6 @@
             if (!str) return '';
             let url = str.trim();
             if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:image')) {
-                // Deteksi dan Konversi Otomatis Semua Jenis Link Google Drive
                 if (url.includes('drive.google.com') || url.includes('docs.google.com')) {
                     let fileId = null;
                     const matchD = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
@@ -420,7 +458,6 @@
                         }
                     }
                     if (fileId) {
-                        // Gunakan endpoint lh3.googleusercontent.com agar bypass CORS browser strict (spt Brave) & tetap transparan
                         return `https://lh3.googleusercontent.com/d/${fileId}`;
                     }
                 }
@@ -429,17 +466,15 @@
             return '';
         }
 
-        // ICON RENDERER HELPER (Mendukung Emoji Teks maupun Gambar URL / Google Drive)
+        // ICON RENDERER HELPER
         function renderIconHtml(iconStr, defaultEmoji = '📄', sizeClasses = 'w-5 h-5') {
             if (!iconStr) return `<span class="shrink-0 inline-block align-middle">${defaultEmoji}</span>`;
             
             const imageUrl = formatImageUrl(iconStr);
             if (imageUrl) {
-                // object-contain digunakan agar gambar transparan tidak terpotong atau memiliki background putih
                 return `<img src="${imageUrl}" alt="Icon" class="${sizeClasses} object-contain shrink-0 inline-block align-middle drop-shadow-md" onerror="this.onerror=null; this.src='https://placehold.co/40x40/202020/eab308?text=IMG';">`;
             }
 
-            // Jika input berbentuk URL tetapi gagal diproses, JANGAN tampilkan teks URL-nya sebagai string
             if (iconStr.startsWith('http://') || iconStr.startsWith('https://')) {
                 return `<span class="shrink-0 inline-block align-middle">${defaultEmoji}</span>`;
             }
@@ -452,6 +487,9 @@
             if (!str) return '';
             let formatted = str;
             
+            // Format ganti baris (\n menjadi <br>) agar tatanan dari JSON tetap rapi
+            formatted = formatted.replace(/\n/g, '<br>');
+
             // Konversi **teks** atau *teks* menjadi <strong> (Teks Tebal / Bold)
             formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-white">$1</strong>');
             formatted = formatted.replace(/\*(.*?)\*/g, '<strong class="font-bold text-white">$1</strong>');
@@ -698,7 +736,7 @@
 
             const blocks = page.blocks || [];
             blocks.forEach((block, index) => {
-                const blockEl = createBlockElement(block, index);
+                const blockEl = createBlockElement(block, index, blocks);
                 blocksContainer.appendChild(blockEl);
             });
 
@@ -707,13 +745,21 @@
             }, 50);
         }
 
-        function createBlockElement(block, index) {
+        function createBlockElement(block, index, allBlocks = []) {
             const wrapper = document.createElement('div');
             wrapper.className = 'relative group/block animate-fade-in';
             wrapper.dataset.index = index;
 
             let blockContent = '';
-            const contentStr = block.content || '';
+            let contentStr = block.content || '';
+
+            // Clean up leading list symbols (e.g. "1. ", "- ", "• ") so they don't double render
+            if (block.type === 'numbered') {
+                contentStr = contentStr.replace(/^(\d+[\.\)]\s*)+/, '');
+            } else if (block.type === 'bullet') {
+                contentStr = contentStr.replace(/^([-•*]\s*)+/, '');
+            }
+
             const renderedHtml = formatMarkdown(contentStr);
 
             if (block.type === 'heading') {
@@ -795,7 +841,19 @@
                     </div>
                 `;
             } else if (block.type === 'numbered') {
-                const numPrefix = block.numberPrefix !== undefined ? block.numberPrefix : `${index + 1}.`;
+                // Hitung urutan angka HANYA dari blok berturut-turut di kelompoknya
+                let seq = 1;
+                for (let i = index - 1; i >= 0; i--) {
+                    if (allBlocks[i] && allBlocks[i].type === 'numbered') {
+                        seq++;
+                    } else {
+                        break; // Berhenti jika bertemu jenis blok lain
+                    }
+                }
+
+                // Gunakan numberPrefix kustom jika pernah diedit manual, atau gunakan urutan sekuensial kelompok `seq.`
+                const numPrefix = block.numberPrefix || `${seq}.`;
+
                 blockContent = `
                     <div class="flex items-start gap-2.5 pl-1">
                         <span class="text-neutral-400 hover:text-yellow-400 font-medium text-sm code-font shrink-0 min-w-[20px] text-right outline-none focus:text-yellow-400 transition-colors border-b border-transparent focus:border-yellow-500" ${isAdmin ? 'contenteditable="true"' : ''} onblur="updateBlockNumberPrefix(${index}, this.innerText)" title="Klik untuk mengedit nomor/prefix">${numPrefix}</span>
@@ -830,7 +888,6 @@
                 `;
             }
 
-            // Controls for Admin (Delete Block)
             const adminControls = isAdmin ? `
                 <button onclick="removeBlock(${index})" class="opacity-0 group-hover/block:opacity-100 transition-opacity absolute -right-8 top-1/2 -translate-y-1/2 p-1.5 hover:bg-red-900/40 text-red-400 rounded text-xs" title="Hapus Blok">
                     ✕
@@ -855,7 +912,6 @@
             }
         }
 
-        // FUNGSI UNTUK MENGUPDATE AWALAN NOMOR PADA POIN NUMBERED
         function updateBlockNumberPrefix(index, newPrefix) {
             const page = itemsData.find(i => i.id === currentPageId);
             if (page && page.blocks && page.blocks[index]) {
@@ -908,8 +964,16 @@
             if (type === 'callout') newBlock.variant = 'warning';
             if (type === 'code') newBlock.language = 'python';
             if (type === 'numbered') {
-                const numberedCount = page.blocks.filter(b => b.type === 'numbered').length;
-                newBlock.numberPrefix = `${numberedCount + 1}.`;
+                // Hitung hanya blok 'numbered' yang berurutan di posisi paling bawah
+                let seq = 1;
+                for (let i = page.blocks.length - 1; i >= 0; i--) {
+                    if (page.blocks[i].type === 'numbered') {
+                        seq++;
+                    } else {
+                        break;
+                    }
+                }
+                newBlock.numberPrefix = `${seq}.`;
             }
 
             page.blocks.push(newBlock);
@@ -977,6 +1041,106 @@
                 });
             }
             searchSuggestions.classList.remove('hidden');
+        });
+
+        // ==============================================================================
+        // IMPORT JSON SYSTEM (FOR GEMINI / CUSTOM JSON ARRAY)
+        // ==============================================================================
+        const openImportJsonBtn = document.getElementById('open-import-json-modal');
+        const closeImportModalBtn = document.getElementById('close-import-modal-btn');
+        const jsonImportModal = document.getElementById('json-import-modal');
+        const cancelImportBtn = document.getElementById('cancel-import-btn');
+        const confirmImportBtn = document.getElementById('confirm-import-btn');
+        const jsonImportInput = document.getElementById('json-import-input');
+        const jsonImportFile = document.getElementById('json-import-file');
+
+        openImportJsonBtn?.addEventListener('click', () => {
+            jsonImportModal.classList.remove('opacity-0', 'pointer-events-none');
+            jsonImportModal.children[0].classList.remove('scale-95');
+            jsonImportInput.value = '';
+        });
+
+        function closeImportModal() {
+            jsonImportModal.classList.add('opacity-0', 'pointer-events-none');
+            jsonImportModal.children[0].classList.add('scale-95');
+            jsonImportInput.value = '';
+        }
+
+        closeImportModalBtn?.addEventListener('click', closeImportModal);
+        cancelImportBtn?.addEventListener('click', closeImportModal);
+
+        jsonImportFile?.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                jsonImportInput.value = event.target.result;
+            };
+            reader.readAsText(file);
+        });
+
+        confirmImportBtn?.addEventListener('click', () => {
+            const rawJson = jsonImportInput.value.trim();
+            if (!rawJson) {
+                showToast('Tempelkan kode JSON terlebih dahulu!', true);
+                return;
+            }
+
+            try {
+                const parsed = JSON.parse(rawJson);
+                if (!Array.isArray(parsed)) {
+                    showToast('Format JSON harus berupa Array [...]', true);
+                    return;
+                }
+
+                const page = itemsData.find(i => i.id === currentPageId);
+                if (!page) {
+                    showToast('Halaman tidak ditemukan!', true);
+                    return;
+                }
+
+                // Map parsed JSON into valid block objects
+                const newBlocks = parsed.map((item, idx) => {
+                    let bType = item.type || 'paragraph';
+                    if (!['heading', 'paragraph', 'callout', 'code', 'bullet', 'numbered', 'image', 'link'].includes(bType)) {
+                        bType = 'paragraph';
+                    }
+
+                    // Strip leading bullet/number signs from imported content
+                    let cleanContentStr = item.content || '';
+                    if (bType === 'numbered') {
+                        cleanContentStr = cleanContentStr.replace(/^(\d+[\.\)]\s*)+/, '');
+                    } else if (bType === 'bullet') {
+                        cleanContentStr = cleanContentStr.replace(/^([-•*]\s*)+/, '');
+                    }
+
+                    const block = {
+                        id: 'b_' + Date.now() + '_' + idx,
+                        type: bType,
+                        content: cleanContentStr
+                    };
+
+                    if (bType === 'code') block.language = item.language || 'python';
+                    if (bType === 'callout') block.variant = item.variant || 'warning';
+                    if (bType === 'numbered') {
+                        if (item.numberPrefix) block.numberPrefix = item.numberPrefix;
+                        else if (item.number) block.numberPrefix = item.number;
+                    }
+
+                    return block;
+                });
+
+                page.blocks = newBlocks;
+                renderDocumentView();
+                autoSaveCurrentPage();
+
+                showToast(`Berhasil mengimpor ${newBlocks.length} blok materi!`);
+                closeImportModal();
+
+            } catch (err) {
+                showToast('Format JSON tidak valid: ' + err.message, true);
+            }
         });
 
         // EXPORT TO JSON SYSTEM
@@ -1128,17 +1292,27 @@
             const blockMenuContainer = document.getElementById('block-menu-container');
             const docAdminActions = document.getElementById('doc-admin-actions');
             const adminExportBubble = document.getElementById('admin-export-bubble');
+            const adminImportBubble = document.getElementById('admin-import-bubble');
 
             if (isAdmin) {
                 addItemBtn?.classList.remove('hidden');
                 blockMenuContainer?.classList.remove('hidden');
                 docAdminActions?.classList.remove('hidden');
-                adminExportBubble?.classList.remove('hidden');
+
+                // Toggle Export (Folder View) vs Import (Document View)
+                if (currentPageId) {
+                    adminExportBubble?.classList.add('hidden');
+                    adminImportBubble?.classList.remove('hidden');
+                } else {
+                    adminExportBubble?.classList.remove('hidden');
+                    adminImportBubble?.classList.add('hidden');
+                }
             } else {
                 addItemBtn?.classList.add('hidden');
                 blockMenuContainer?.classList.add('hidden');
                 docAdminActions?.classList.add('hidden');
                 adminExportBubble?.classList.add('hidden');
+                adminImportBubble?.classList.add('hidden');
             }
         }
 
@@ -1231,7 +1405,7 @@
             renderCurrentView();
         });
 
-        // ADD ITEM MODAL HANDLERS WITH VALID UUID GENERATION
+        // ADD ITEM MODAL HANDLERS
         const addModal = document.getElementById('add-modal');
         const addItemBtn = document.getElementById('add-item-btn');
         const cancelAddBtn = document.getElementById('cancel-add-btn');
@@ -1254,7 +1428,6 @@
             const icon = document.getElementById('add-item-icon').value || (type === 'folder' ? '📁' : '📄');
             const name = document.getElementById('add-item-name').value || 'Item Baru';
 
-            // Generate valid UUID v4 string for Supabase compatibility
             const newUuid = crypto.randomUUID ? crypto.randomUUID() : '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, c =>
                 (+c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> +c / 4).toString(16)
             );
