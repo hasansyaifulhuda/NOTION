@@ -73,7 +73,7 @@
   // Hitung estimasi waktu baca (rata-rata 180 kata/menit)
   let totalWords = (doc.title || '').split(/\s+/).length;
   blocks.forEach(b => {
-    const txt = (b.data && (b.data.text || b.data.code || b.data.body || '')) || '';
+    const txt = (b.data && (b.data.text || b.data.code || b.data.body || b.data.cmd || '')) || '';
     totalWords += txt.replace(/<[^>]*>/g, '').split(/\s+/).length;
   });
   const minutes = Math.max(1, Math.ceil(totalWords / 180));
@@ -104,6 +104,13 @@ function esc(s) {
   return String(s || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
 }
 
+function parseTechText(html) {
+  if (!html) return '';
+  let parsed = String(html).replace(/\*\*([^*]+)\*\*/g, '<span class="px-1.5 py-0.5 mx-0.5 text-xs font-mono bg-[#2a2a2a] text-[#ff9e64] rounded border border-[#3b3b3b] font-semibold">$1</span>');
+  parsed = parsed.replace(/<kbd>(.*?)<\/kbd>/g, '<kbd class="px-1.5 py-0.5 text-xs font-mono bg-[#333] text-[#7aa2f7] rounded border border-[#444] shadow-sm">$1</kbd>');
+  return parsed;
+}
+
 function renderBlock(block, allBlocks, idx) {
   const d = block.data || {};
   const wrap = document.createElement('div');
@@ -131,11 +138,11 @@ function renderBlock(block, allBlocks, idx) {
       break;
     }
     case 'text':
-      wrap.innerHTML = `<div class="text-[15px] leading-7 text-[#c9c8c4]">${d.text || ''}</div>`;
+      wrap.innerHTML = `<div class="text-[15px] leading-7 text-[#c9c8c4]">${parseTechText(d.text || '')}</div>`;
       break;
 
     case 'bulleted':
-      wrap.innerHTML = `<div class="flex gap-2.5 text-[15px] leading-7"><span class="select-none text-[#529cca]">•</span><div class="flex-1 text-[#c9c8c4]">${d.text || ''}</div></div>`;
+      wrap.innerHTML = `<div class="flex gap-2.5 text-[15px] leading-7"><span class="select-none text-[#529cca]">•</span><div class="flex-1 text-[#c9c8c4]">${parseTechText(d.text || '')}</div></div>`;
       break;
 
     case 'numbered': {
@@ -143,7 +150,7 @@ function renderBlock(block, allBlocks, idx) {
       for (let k = idx - 1; k >= 0; k--) {
         if (allBlocks[k].type === 'numbered') n++; else break;
       }
-      wrap.innerHTML = `<div class="flex gap-2 text-[15px] leading-7"><span class="min-w-[18px] select-none text-[#529cca] font-mono">${n}.</span><div class="flex-1 text-[#c9c8c4]">${d.text || ''}</div></div>`;
+      wrap.innerHTML = `<div class="flex gap-2 text-[15px] leading-7"><span class="min-w-[18px] select-none text-[#529cca] font-mono">${n}.</span><div class="flex-1 text-[#c9c8c4]">${parseTechText(d.text || '')}</div></div>`;
       break;
     }
 
@@ -154,7 +161,7 @@ function renderBlock(block, allBlocks, idx) {
       wrap.innerHTML = `
         <label class="flex items-start gap-2.5 text-[15px] leading-7 cursor-pointer">
           <input type="checkbox" ${isChecked ? 'checked' : ''} class="todo-cb mt-[6px] h-4 w-4 shrink-0 rounded border-[#2e2e2e] accent-[#529cca]" />
-          <span class="todo-text flex-1 text-[#c9c8c4] ${isChecked ? 'todo-done' : ''}">${d.text || ''}</span>
+          <span class="todo-text flex-1 text-[#c9c8c4] ${isChecked ? 'todo-done' : ''}">${parseTechText(d.text || '')}</span>
         </label>`;
       
       const cb = wrap.querySelector('.todo-cb');
@@ -171,10 +178,10 @@ function renderBlock(block, allBlocks, idx) {
         <details class="group my-1 rounded-lg border border-[#2e2e2e] bg-[#1e1e1e] p-2.5" ${d.open ? 'open' : ''}>
           <summary class="flex items-center gap-2 cursor-pointer font-medium text-[15px] text-[#e3e2de] select-none">
             <i data-lucide="chevron-right" class="h-4 w-4 text-[#9b9a97] transition group-open:rotate-90"></i>
-            <span>${d.text || 'Detail materi'}</span>
+            <span>${parseTechText(d.text || 'Detail materi')}</span>
           </summary>
           <div class="mt-2.5 ml-6 border-l border-[#2e2e2e] pl-3 text-[15px] leading-7 text-[#c9c8c4]">
-            ${d.body || ''}
+            ${parseTechText(d.body || '')}
           </div>
         </details>`;
       break;
@@ -197,18 +204,162 @@ function renderBlock(block, allBlocks, idx) {
       break;
     }
 
+    case 'linux-cmd': {
+      wrap.innerHTML = `
+        <div class="my-3 rounded-lg border border-[#2e2e2e] bg-[#161616] overflow-hidden shadow-md">
+          <div class="px-3.5 py-2 border-b border-[#2e2e2e] bg-[#1c1c1c] text-sm font-semibold text-[#e3e2de] flex items-center gap-2">
+            <i data-lucide="terminal" class="h-4 w-4 text-[#529cca]"></i> ${esc(d.title || 'Perintah Linux')}
+          </div>
+          <div class="p-3 bg-[#111] font-mono text-xs text-[#a9b7c6] relative group flex items-center justify-between">
+            <div><span class="text-[#629755] select-none">$ </span><span class="text-[#eceff4]">${esc(d.cmd || '')}</span></div>
+            <button class="cp rounded bg-[#2a2a2a] px-2 py-1 text-[11px] text-[#aaa] hover:text-white hover:bg-[#3b3b3b] transition cursor-pointer">Salin</button>
+          </div>
+          ${d.desc ? `<div class="px-3.5 py-2.5 text-xs text-[#9b9a97] border-t border-[#222] bg-[#181818]">${parseTechText(d.desc)}</div>` : ''}
+        </div>`;
+      wrap.querySelector('.cp')?.addEventListener('click', () => {
+        navigator.clipboard.writeText(d.cmd || '').then(() => alert('Perintah disalin!'));
+      });
+      break;
+    }
+
+    case 'net-config': {
+      const vendor = d.vendor || 'cisco';
+      const vendorName = vendor.toUpperCase();
+      wrap.innerHTML = `
+        <div class="my-3 rounded-lg border border-[#2e2e2e] bg-[#151515] overflow-hidden shadow-md">
+          <div class="flex items-center justify-between px-3.5 py-2 bg-[#1f1f1f] border-b border-[#2e2e2e] text-xs text-[#9b9a97]">
+            <span class="uppercase font-mono font-bold tracking-wider text-[#529cca]">CLI Config — ${esc(vendorName)}</span>
+            <button class="cp flex items-center gap-1.5 rounded px-2.5 py-1 bg-[#2a2a2a] hover:bg-[#3b3b3b] text-xs text-[#e3e2de] transition cursor-pointer"><i data-lucide="copy" class="h-3.5 w-3.5"></i> Salin</button>
+          </div>
+          <pre class="p-3.5 font-mono text-xs text-[#a9b7c6] overflow-x-auto m-0 bg-[#121212] leading-relaxed">${esc(d.code || '')}</pre>
+        </div>`;
+      wrap.querySelector('.cp').onclick = () => navigator.clipboard.writeText(d.code || '').then(() => alert('Konfigurasi disalin!'));
+      break;
+    }
+
+    case 'cyber-alert': {
+      const level = d.level || 'warning';
+      const colors = {
+        warning: { bg: '#3a2e16', border: '#b58900', icon: 'alert-triangle', text: '#ffb86c' },
+        danger: { bg: '#3d1c1c', border: '#dc322f', icon: 'shield-alert', text: '#ff7369' },
+        info: { bg: '#1f3a4d', border: '#268bd2', icon: 'shield-check', text: '#8be9fd' }
+      };
+      const c = colors[level] || colors.warning;
+      const defaultTitleTxt = `SECURITY ALERT — ${level.toUpperCase()}`;
+      const currentTitle = d.title !== undefined && d.title !== '' ? d.title : defaultTitleTxt;
+      wrap.innerHTML = `
+        <div class="flex items-start gap-3 rounded-lg border p-3.5 my-3 shadow-md" style="background:${c.bg}; border-color:${c.border}">
+          <i data-lucide="${c.icon}" class="h-5 w-5 shrink-0 mt-0.5" style="color:${c.text}"></i>
+          <div class="flex-1">
+            <div class="text-xs font-bold uppercase tracking-wider mb-1" style="color:${c.text}">${esc(currentTitle)}</div>
+            <div class="text-[14px] leading-6 text-[#e3e2de]">${parseTechText(d.text || '')}</div>
+          </div>
+        </div>`;
+      break;
+    }
+
+    case 'env-variable': {
+      wrap.innerHTML = `
+        <div class="flex items-center gap-3 rounded-md border border-[#2e2e2e] bg-[#1f1f1f] px-3.5 py-2 my-2 shadow-sm">
+          <i data-lucide="box" class="h-4 w-4 text-[#7aa2f7]"></i>
+          <span class="font-mono text-xs font-bold text-[#7aa2f7] bg-[#141414] px-2 py-1 rounded border border-[#333]">${esc(d.key)}</span>
+          <span class="font-mono text-xs text-[#9ece6a] bg-[#141414] px-2 py-1 rounded border border-[#333] flex-1 truncate">${esc(d.val)}</span>
+        </div>`;
+      break;
+    }
+
+    case 'log-output': {
+      wrap.innerHTML = `
+        <div class="rounded-lg border border-[#2e2e2e] bg-[#121212] my-3 overflow-hidden shadow-md">
+          <div class="px-3.5 py-1.5 bg-[#1a1a1a] border-b border-[#2e2e2e] text-[11px] font-mono text-[#888] flex items-center gap-2">
+            <span class="h-2 w-2 rounded-full bg-[#f1c40f]"></span> Terminal Log Stream
+          </div>
+          <pre class="p-3.5 font-mono text-xs text-[#2ecc71] max-h-56 overflow-y-auto m-0 bg-[#0d0d0d] leading-relaxed">${esc(d.log)}</pre>
+        </div>`;
+      break;
+    }
+
+    case 'endpoint-api': {
+      const method = d.method || 'GET';
+      const colors = { GET: 'bg-[#1f3f37] text-[#2ecc71] border-[#27ae60]', POST: 'bg-[#463a1c] text-[#f1c40f] border-[#f39c12]', PUT: 'bg-[#1f3a4d] text-[#3498db] border-[#2980b9]', DELETE: 'bg-[#4a2626] text-[#e74c3c] border-[#c0392b]' };
+      wrap.innerHTML = `
+        <div class="rounded-lg border border-[#2e2e2e] bg-[#181818] p-3.5 my-3 shadow-md space-y-2.5">
+          <div class="flex items-center gap-2.5">
+            <span class="px-2.5 py-1 rounded text-xs font-mono font-bold border ${colors[method] || 'bg-[#2a2a2a] text-white border-[#444]'}">${method}</span>
+            <span class="font-mono text-xs font-semibold text-[#529cca] bg-[#111] px-2.5 py-1 rounded border border-[#333] flex-1">${esc(d.url)}</span>
+          </div>
+          ${d.payload ? `
+            <div class="text-[11px] font-mono text-[#888] uppercase tracking-wider">Payload / Body JSON:</div>
+            <pre class="p-3 bg-[#111] rounded border border-[#2e2e2e] font-mono text-xs text-[#a9b7c6] overflow-x-auto m-0">${esc(d.payload)}</pre>
+          ` : ''}
+        </div>`;
+      break;
+    }
+
+    case 'tool-card': {
+      wrap.innerHTML = `
+        <div class="flex items-start gap-3.5 rounded-lg border border-[#2e2e2e] bg-[#1f1f1f] p-4 my-3 shadow-md">
+          <div class="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-[#2b2b2b] text-[#529cca] border border-[#333]">
+            <i data-lucide="wrench" class="h-5 w-5"></i>
+          </div>
+          <div class="flex-1 min-w-0 space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-bold text-white">${esc(d.name || 'Tool')}</span>
+              ${d.version ? `<span class="text-[11px] font-mono px-2 py-0.5 rounded bg-[#2b2b2b] text-[#9b9a97] border border-[#383838]">${esc(d.version)}</span>` : ''}
+            </div>
+            <div class="text-xs text-[#9b9a97] leading-relaxed">${esc(d.desc)}</div>
+            ${d.url ? `<a href="${esc(d.url)}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-xs text-[#529cca] hover:text-[#7aa2f7] hover:underline mt-1.5 font-medium"><i data-lucide="external-link" class="h-3.5 w-3.5"></i> Tautan Resmi & Dokumentasi</a>` : ''}
+          </div>
+        </div>`;
+      break;
+    }
+
+    case 'cheatsheet': {
+      let headers = d.headers || ['Command', 'Deskripsi'];
+      let rows = d.rows || [['', '']];
+      if (!d.rows && d.items) {
+        headers = ['Command', 'Deskripsi'];
+        rows = d.items.map(i => [i.key || '', i.val || '']);
+      }
+      wrap.innerHTML = `
+        <div class="my-3 rounded-lg border border-[#2e2e2e] bg-[#161616] overflow-hidden shadow-md">
+          <div class="px-3.5 py-2 border-b border-[#2e2e2e] bg-[#1c1c1c] text-sm font-semibold text-[#e3e2de] flex items-center gap-2">
+            <i data-lucide="book-open" class="h-4 w-4 text-[#f1c40f]"></i> ${esc(d.title || 'Cheatsheet')}
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs font-mono">
+              <thead>
+                <tr class="bg-[#1f1f1f] text-[#9b9a97] border-b border-[#2e2e2e]">
+                  ${headers.map(h => `<th class="px-3.5 py-2 font-semibold">${esc(h)}</th>`).join('')}
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[#222]">
+                ${rows.map(row => `
+                  <tr class="hover:bg-[#1a1a1a]">
+                    ${row.map((cell, ci) => `
+                      <td class="px-3.5 py-2.5 ${ci === 0 ? 'text-[#ff9e64] font-bold' : 'text-[#b0b0b0] font-sans'}">${parseTechText(cell || '')}</td>
+                    `).join('')}
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+      break;
+    }
+
     case 'callout': {
       const colors = { blue: '#1f3a4d', yellow: '#463a1c', red: '#4a2626', green: '#1f3f37', gray: '#262626' };
       wrap.innerHTML = `
         <div class="my-2 flex gap-3 rounded-lg border border-[#2e2e2e] p-3.5 text-[15px] leading-7" style="background:${colors[d.color] || colors.blue}">
           <i data-lucide="${esc(d.icon || 'info')}" class="h-5 w-5 shrink-0 mt-1 text-[#e3e2de]"></i>
-          <div class="flex-1 text-[#e3e2de]">${d.text || ''}</div>
+          <div class="flex-1 text-[#e3e2de]">${parseTechText(d.text || '')}</div>
         </div>`;
       break;
     }
 
     case 'quote':
-      wrap.innerHTML = `<blockquote class="my-2 border-l-[3px] border-[#529cca] pl-4 italic text-[15px] text-[#c9c8c4] leading-7">${d.text || ''}</blockquote>`;
+      wrap.innerHTML = `<blockquote class="my-2 border-l-[3px] border-[#529cca] pl-4 italic text-[15px] text-[#c9c8c4] leading-7">${parseTechText(d.text || '')}</blockquote>`;
       break;
 
     case 'divider':
@@ -223,7 +374,7 @@ function renderBlock(block, allBlocks, idx) {
             <tbody>
               ${rows.map((r, ri) => `
                 <tr>
-                  ${r.map(c => `<${d.header && ri === 0 ? 'th' : 'td'}>${c || ''}</${d.header && ri === 0 ? 'th' : 'td'}>`).join('')}
+                  ${r.map(c => `<${d.header && ri === 0 ? 'th' : 'td'}>${parseTechText(c || '')}</${d.header && ri === 0 ? 'th' : 'td'}>`).join('')}
                 </tr>`).join('')}
             </tbody>
           </table>
@@ -237,7 +388,7 @@ function renderBlock(block, allBlocks, idx) {
         <div class="my-2 grid gap-3" style="grid-template-columns: repeat(${n}, minmax(0, 1fr))">
           ${(d.items || []).map(item => `
             <div class="rounded-lg border border-[#2e2e2e] bg-[#1e1e1e] p-3 text-[15px] leading-7 text-[#c9c8c4]">
-              ${item || ''}
+              ${parseTechText(item || '')}
             </div>`).join('')}
         </div>`;
       break;
@@ -255,7 +406,7 @@ function renderBlock(block, allBlocks, idx) {
               </button>`).join('')}
           </div>
           <div class="tcontent p-4 text-[15px] leading-7 text-[#c9c8c4] bg-[#191919]">
-            ${(tabs[0] || {}).body || ''}
+            ${parseTechText((tabs[0] || {}).body || '')}
           </div>
         </div>`;
 
@@ -269,7 +420,7 @@ function renderBlock(block, allBlocks, idx) {
             b.className = 'tbtn cursor-pointer whitespace-nowrap rounded px-3 py-1 text-xs sm:text-sm text-[#9b9a97] hover:bg-[#242424]';
           });
           btn.className = 'tbtn cursor-pointer whitespace-nowrap rounded px-3 py-1 text-xs sm:text-sm bg-[#2b2b2b] text-white font-medium';
-          content.innerHTML = (tabs[+btn.dataset.ti] || {}).body || '';
+          content.innerHTML = parseTechText((tabs[+btn.dataset.ti] || {}).body || '');
         };
       });
       break;
@@ -307,7 +458,7 @@ function renderBlock(block, allBlocks, idx) {
           <figure class="my-3">
             <img src="${esc(d.url)}" alt="${esc(d.caption)}" title="Klik untuk memperbesar"
               class="max-h-[500px] w-full cursor-zoom-in rounded-lg border border-[#2e2e2e] object-contain bg-[#161616] transition hover:opacity-95" />
-            ${d.caption ? `<figcaption class="mt-1.5 text-center text-xs text-[#9b9a97]">${esc(d.caption)}</figcaption>` : ''}
+            ${d.caption ? `<figcaption class="mt-1.5 text-center text-xs text-[#9b9a97]">${parseTechText(d.caption)}</figcaption>` : ''}
           </figure>`;
         wrap.querySelector('img').onclick = () => {
           document.getElementById('lightboxImg').src = d.url;
@@ -316,6 +467,33 @@ function renderBlock(block, allBlocks, idx) {
         };
       }
       break;
+
+    case 'image-grid': {
+      const imgs = d.images || [];
+      if (imgs.length > 0) {
+        const colCount = Math.min(imgs.length, 3);
+        wrap.innerHTML = `
+          <div class="my-3 space-y-2">
+            <div class="grid gap-2.5" style="grid-template-columns: repeat(${colCount}, minmax(0, 1fr));">
+              ${imgs.map((url, idx) => `
+                <div class="relative group overflow-hidden rounded-lg border border-[#2e2e2e] bg-[#161616] aspect-video cursor-zoom-in shadow-md">
+                  <img src="${esc(url)}" referrerpolicy="no-referrer" data-idx="${idx}" class="h-full w-full object-cover transition hover:scale-105" />
+                </div>
+              `).join('')}
+            </div>
+            ${d.caption ? `<div class="text-xs text-[#9b9a97] text-center mt-1.5">${parseTechText(d.caption)}</div>` : ''}
+          </div>`;
+
+        wrap.querySelectorAll('img').forEach(img => {
+          img.onclick = () => {
+            document.getElementById('lightboxImg').src = img.src;
+            document.getElementById('lightbox').classList.remove('hidden');
+            document.getElementById('lightbox').classList.add('flex');
+          };
+        });
+      }
+      break;
+    }
 
     case 'file':
       if (d.url) {
@@ -357,7 +535,7 @@ function renderBlock(block, allBlocks, idx) {
         wrap.innerHTML = `
           <a href="${esc(d.url)}" target="_blank" rel="noopener" class="my-2 block rounded-lg border border-[#2e2e2e] bg-[#202020] p-3.5 hover:bg-[#252525] transition">
             <div class="text-sm font-medium text-[#529cca]">${esc(d.title || d.url)}</div>
-            <div class="mt-1 text-xs text-[#9b9a97] line-clamp-2">${esc(d.desc || '')}</div>
+            <div class="mt-1 text-xs text-[#9b9a97] line-clamp-2">${parseTechText(d.desc || '')}</div>
             <div class="mt-2 flex items-center gap-1 text-[11px] text-[#6b6b6b]"><i data-lucide="external-link" class="h-3 w-3"></i> ${esc(d.url)}</div>
           </a>`;
       }
