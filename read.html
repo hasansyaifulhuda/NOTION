@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Membaca Materi — NOTION</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<link rel="stylesheet" href="./css/style.css" />
+</head>
+<body class="min-h-screen pb-36">
+
+<!-- Indikator Scroll Bar Atas -->
+<div class="fixed top-0 left-0 z-50 h-[2px] w-full bg-transparent">
+  <div id="progressBar" class="h-full w-0 bg-[#529cca]"></div>
+</div>
+
+<!-- Header Reader Mode (Fixed Netap di Atas) -->
+<header class="fixed top-0 left-0 right-0 z-40 border-b border-[#2e2e2e] bg-[#191919]/95 backdrop-blur">
+  <div class="mx-auto flex max-w-4xl items-center justify-between gap-3 px-4 py-2.5 text-sm">
+    <!-- Kiri: Logo + Breadcrumb Navigasi Mirip Project 1 -->
+    <div class="flex min-w-0 items-center gap-2">
+      <a href="./index.html" class="flex shrink-0 items-center gap-2 font-semibold hover:opacity-85" title="Katalog Beranda">
+        <span class="grid h-7 w-7 place-items-center rounded-md bg-[#2b2b2b]"><i data-lucide="book-open" class="h-3.5 w-3.5 text-[#529cca]"></i></span>
+        <span class="hidden md:inline">NOTION</span>
+      </a>
+      <span class="h-2 w-2 rounded-full bg-[#4dab9a] shrink-0" title="Terhubung"></span>
+      <span class="text-[#4a4a4a]">/</span>
+      <nav id="readerBreadcrumb" class="flex min-w-0 items-center gap-1.5 overflow-x-auto whitespace-nowrap text-xs sm:text-sm text-[#9b9a97] no-scrollbar"></nav>
+    </div>
+
+    <!-- Kanan: Tombol Aksi -->
+    <div class="flex shrink-0 items-center gap-2">
+      <button id="btnCopyUrl" class="flex items-center gap-1.5 rounded-md border border-[#2e2e2e] bg-[#202020] px-2.5 py-1.5 text-xs text-[#c9c8c4] hover:bg-[#2b2b2b] cursor-pointer">
+        <i data-lucide="share-2" class="h-3.5 w-3.5"></i> <span class="hidden sm:inline">Bagikan</span>
+      </button>
+      <button onclick="window.print()" class="flex items-center gap-1.5 rounded-md border border-[#2e2e2e] bg-[#202020] px-2.5 py-1.5 text-xs text-[#c9c8c4] hover:bg-[#2b2b2b] cursor-pointer">
+        <i data-lucide="printer" class="h-3.5 w-3.5"></i> <span class="hidden sm:inline">Cetak / PDF</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- Kanvas Membaca Materi (Diberi pt-20 agar tidak tertutup header) -->
+<main class="mx-auto max-w-3xl px-4 pt-20 pb-10 sm:px-6">
+  <!-- Banner Cover (Jika Tersedia) -->
+  <div id="coverBox" class="hidden mb-6 overflow-hidden rounded-xl border border-[#2e2e2e]">
+    <img id="coverImg" src="" alt="Cover" class="h-48 w-full object-cover sm:h-64" />
+  </div>
+
+  <!-- Ikon & Judul Dokumen -->
+  <div class="mb-3 flex items-center gap-3">
+    <div id="docIcon" class="grid h-12 w-12 place-items-center rounded-lg text-3xl bg-[#202020] border border-[#2e2e2e]">
+      <i data-lucide="file-text" class="h-6 w-6 text-[#529cca]"></i>
+    </div>
+  </div>
+
+  <h1 id="docTitle" class="mb-3 text-3xl font-bold leading-tight sm:text-[40px] text-[#e3e2de]">Memuat materi...</h1>
+  
+  <div id="readingMeta" class="mb-8 flex flex-wrap items-center gap-3 text-xs text-[#9b9a97] border-b border-[#2e2e2e] pb-4">
+    <span id="readTime"><i data-lucide="clock" class="inline h-3.5 w-3.5 mr-1"></i> Menghitung waktu baca...</span>
+    <span>•</span>
+    <span id="updateDate"></span>
+  </div>
+
+  <!-- Area Render Blok Dokumen -->
+  <article id="readerCanvas" class="space-y-1 text-[#e3e2de]"></article>
+</main>
+
+<!-- Modal Lightbox Preview Gambar -->
+<div id="lightbox" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-sm p-4" onclick="this.classList.add('hidden')">
+  <img id="lightboxImg" class="max-h-[90vh] max-w-[95vw] rounded-lg object-contain shadow-2xl" src="" alt="Preview" />
+</div>
+
+<script src="./js/config.js"></script>
+<script src="./js/reader.js"></script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Notion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="./css/style.css" />
+</head>
+<body class="min-h-screen pb-20">
+
+<!-- Header Universal Reader -->
+<header class="sticky top-0 z-30 border-b border-[#2e2e2e] bg-[#191919]/95 backdrop-blur">
+  <div class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2.5 text-sm">
+    <!-- Kiri: Logo + Breadcrumb -->
+    <div class="flex min-w-0 items-center gap-2">
+      <a href="./index.html" class="flex shrink-0 items-center gap-2 font-semibold hover:opacity-85" title="Katalog Beranda">
+        <span class="grid h-7 w-7 place-items-center rounded-md bg-[#2b2b2b]"><i data-lucide="book-open" class="h-3.5 w-3.5 text-[#529cca]"></i></span>
+        <span class="hidden md:inline">NOTION</span>
+      </a>
+      <!-- Titik status koneksi (Hijau / Merah) -->
+      <span id="connDot" class="h-2 w-2 rounded-full bg-[#4dab9a]" title="Terhubung"></span>
+      <span class="text-[#4a4a4a]">/</span>
+      <nav id="breadcrumb" class="flex min-w-0 items-center gap-1.5 overflow-x-auto whitespace-nowrap text-xs sm:text-sm text-[#9b9a97] no-scrollbar"></nav>
+    </div>
+
+    <!-- Tengah: Kolom Pencarian Global (Ctrl + K) -->
+    <div class="relative hidden sm:block flex-1 max-w-xs md:max-w-sm">
+      <i data-lucide="search" class="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#9b9a97]"></i>
+      <input id="globalSearch" type="text" placeholder="Cari materi publik... (Ctrl+K)"
+        class="w-full rounded-md border border-[#2e2e2e] bg-[#202020] py-1.5 pl-8 pr-14 text-xs outline-none placeholder:text-[#6b6b6b] focus:border-[#529cca]" />
+      <kbd class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-[#383838] bg-[#191919] px-1.5 py-0.5 text-[10px] text-[#6b6b6b]">Ctrl K</kbd>
+    </div>
+  </div>
+</header>
+
+<main class="mx-auto max-w-6xl px-4 py-8">
+  <div id="viewRoot">
+    <div class="py-20 text-center text-sm text-[#6b6b6b]">Memuat katalog materi...</div>
+  </div>
+</main>
+
+<script src="./js/config.js"></script>
+<script src="./js/app.js"></script>
+</body>
+</html>
