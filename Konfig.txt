@@ -1,0 +1,125 @@
+# oct/20/2026 14:41:15 by RouterOS 6.49.22
+# software id = VLWV-B47T
+#
+# model = RBD52G-5HacD2HnD
+# serial number = B4A00B7592E4
+/interface bridge
+add name=bridge1
+/interface wireless
+set [ find default-name=wlan1 ] band=2ghz-b/g/n channel-width=20/40mhz-XX country=indonesia disabled=no ssid="ICT SKANESA" wmm-support=enabled
+set [ find default-name=wlan2 ] band=5ghz-a/n/ac channel-width=20/40mhz-XX country=indonesia disabled=no frequency=5745 mode=ap-bridge ssid=25G wireless-protocol=802.11 \
+    wmm-support=enabled
+add disabled=no mac-address=C6:AD:34:00:2B:85 master-interface=wlan1 name=wlan3 ssid=24G wps-mode=disabled
+/interface wireless security-profiles
+set [ find default=yes ] supplicant-identity=MikroTik
+add authentication-types=wpa2-psk mode=dynamic-keys name=profile1 supplicant-identity="" wpa2-pre-shared-key=glory2026
+/ip hotspot profile
+add dns-name=shanz.id hotspot-address=192.168.177.1 html-directory=flash/hotspot login-by=http-chap,http-pap name=hsprof1
+/ip hotspot
+add disabled=no interface=bridge1 name=hotspot1 profile=hsprof1
+/ip hotspot user profile
+add name=2M rate-limit=2M/2M
+add name=5M rate-limit=5M/5M
+/ip hotspot user
+add name="1" password="1" profile="5M"
+add name="2" password="2" profile="5M"
+add name="3" password="3" profile="5M"
+add name="4" password="4" profile="5M"
+add name="5" password="5" profile="5M"
+add name="6" password="6" profile="5M"
+add name="7" password="7" profile="2M"
+add name="8" password="8" profile="2M"
+add name="9" password="9" profile="2M"
+add name="10" password="10" profile="2M"
+add name="11" password="11" profile="2M"
+add name="12" password="12" profile="2M"
+add name="13" password="13" profile="2M"
+add name="14" password="14" profile="2M"
+add name="15" password="15" profile="5M"
+add name="16" password="16" profile="5M"
+add name="17" password="17" profile="2M"
+add name="18" password="18" profile="2M"
+add name="19" password="19" profile="5M"
+add name="20" password="20" profile="5M"
+add name="21" password="21" profile="5M"
+add name="22" password="22" profile="2M"
+add name="23" password="23" profile="5M"
+add name="24" password="24" profile="2M"
+add name="25" password="25" profile="2M"
+add name="26" password="26" profile="2M"
+add name="27" password="27" profile="2M"
+add name="28" password="28" profile="2M"
+add name="29" password="29" profile="5M"
+add name="30" password="30" profile="2M"
+add name="31" password="31" profile="5M"
+add name="32" password="32" profile="5M"
+add name="33" password="33" profile="5M"
+add name="34" password="34" profile="5M"
+add name="35" password="35" profile="5M"
+add name="36" password="36" profile="5M"
+/ip pool
+add name=hs-pool-8 ranges=192.168.177.2-192.168.177.254
+add name=pool-ether3 ranges=192.168.10.2-192.168.10.254
+add name=pool-ether2 ranges=192.168.30.2-192.168.30.254
+add name=pool-ether4 ranges=192.168.30.254-192.168.40.2
+add name=pool-ether5 ranges=192.168.30.254-192.168.50.2
+/ip dhcp-server
+add address-pool=hs-pool-8 disabled=no interface=bridge1 lease-time=1h name=dhcp1
+add address-pool=pool-ether3 disabled=no interface=ether3 lease-time=1d name=dhcp-laptop
+add address-pool=pool-ether3 disabled=no interface=ether2 lease-time=1d name=server1
+add address-pool=pool-ether3 disabled=no interface=ether4 lease-time=1d name=server2
+add address-pool=pool-ether3 disabled=no interface=ether5 lease-time=1d name=server3
+/tool user-manager customer
+set admin access=own-routers,own-users,own-profiles,own-limits,config-payment-gw
+/interface bridge port
+add bridge=bridge1 interface=wlan2
+add bridge=bridge1 interface=wlan3
+/ip neighbor discovery-settings
+set discover-interface-list=all
+/ip address
+add address=192.168.177.1/24 interface=bridge1 network=192.168.177.0
+add address=192.168.10.1/24 interface=ether3 network=192.168.10.0
+add address=192.168.30.1/24 interface=ether2 network=192.168.30.0
+add address=192.168.40.1/24 interface=ether4 network=192.168.40.0
+add address=192.168.50.1/24 interface=ether5 network=192.168.50.0
+/ip dhcp-client
+add disabled=no interface=ether1
+add disabled=no interface=wlan1
+/ip dhcp-server lease
+add address=192.168.177.253 client-id=1:4:e5:98:9:7c:0 mac-address=04:E5:98:09:7C:00 server=dhcp1
+/ip dhcp-server network
+add address=192.168.10.0/24 dns-server=8.8.8.8,1.1.1.1,192.168.10.1 gateway=192.168.10.1
+add address=192.168.30.0/24 dns-server=8.8.8.8,1.1.1.1,192.168.30.1 gateway=192.168.30.1
+add address=192.168.40.0/24 dns-server=8.8.8.8,1.1.1.1,192.168.40.1 gateway=192.168.40.1
+add address=192.168.50.0/24 dns-server=8.8.8.8,1.1.1.1,192.168.50.1 gateway=192.168.50.1
+add address=192.168.177.0/24 dns-server=8.8.8.8,1.1.1.1,192.168.177.1 gateway=192.168.177.1
+/ip dns
+set allow-remote-requests=yes cache-size=8192KiB query-total-timeout=5s servers=8.8.8.8,1.1.1.1
+/ip firewall filter
+add action=passthrough chain=unused-hs-chain comment="place hotspot rules here" disabled=yes
+/ip firewall mangle
+add action=change-mss chain=forward new-mss=clamp-to-pmtu passthrough=yes protocol=tcp tcp-flags=syn
+/ip firewall nat
+add action=passthrough chain=unused-hs-chain comment="place hotspot rules here" disabled=yes
+add action=masquerade chain=srcnat out-interface=ether1
+add action=masquerade chain=srcnat out-interface=wlan1
+/ip hotspot ip-binding
+add mac-address=04:E5:98:09:7C:00 type=bypassed
+add mac-address=68:EC:C5:6E:F6:F9 server=hotspot1 type=bypassed
+/ip hotspot service-port
+set ftp disabled=yes
+/ip service
+set telnet disabled=yes
+set ftp disabled=yes
+set api disabled=yes
+set api-ssl disabled=yes
+/system clock
+set time-zone-name=Asia/Jakarta
+/system identity
+set name=HudaMikrotik
+/system ntp client
+set enabled=yes primary-ntp=162.159.200.123 secondary-ntp=202.3.218.138
+/tool bandwidth-server
+set enabled=no
+/tool user-manager database
+set db-path=flash/user-manager
